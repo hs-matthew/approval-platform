@@ -2,7 +2,7 @@ import { initializeApp } from 'firebase/app';
 import { getFirestore } from 'firebase/firestore';
 
 const firebaseConfig = {
-  apiKey: "AIzaSyAC2F_pJ-pLJJfMoZ27BpMvEFJjOcqvYmo",
+  apiKey: "",
   authDomain: "approval-platform.firebaseapp.com",
   projectId: "approval-platform",
   storageBucket: "approval-platform.firebasestorage.app",
