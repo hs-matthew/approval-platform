@@ -811,15 +811,7 @@ const Navigation = () => (
 <div className="text-gray-700">
   {submission.type === 'blog_post' ? (
     <div>
-      {submission.content
-        .replace(/<[^>]*>/g, '') // Strip HTML tags
-        .replace(/&lt;/g, '<')   // Decode entities  
-        .replace(/&gt;/g, '>')
-        .replace(/&amp;/g, '&')
-        .replace(/&quot;/g, '"')
-        .replace(/&#39;/g, "'")
-        .replace(/&nbsp;/g, ' ')
-        .substring(0, 200) + '...'}
+      {createSafePreview(submission.content, 200)}
     </div>
   ) : (
     <div>{submission.description.substring(0, 200)}...</div>
