@@ -146,40 +146,16 @@ const ApprovalPlatform = () => {
   };
 
 const handleSubmitPost = async () => {
-  console.log('🚀 Button clicked - handleSubmitPost called');
-  console.log('📊 Form data:', { 
-    title: newPost.title, 
-    content: newPost.content, 
-    workspaceId: newPost.workspaceId 
-  });
-  
-  if (!newPost.title.trim() || !newPost.content.trim() || !newPost.workspaceId) {
-    console.log('❌ Validation failed');
-    alert('Please fill in all required fields.');
-    return;
-  }
-  
-  console.log('✅ Validation passed, trying to save to Firebase...');
-  console.log('🔗 Database object:', db);
+  console.log('Trying to save...');
   
   try {
-    const docRef = await addDoc(collection(db, 'submissions'), {
-      type: 'blog_post',
-      title: newPost.title,
-      content: newPost.content,
-      image: newPost.image,
-      authorId: currentUser.id,
-      workspaceId: parseInt(newPost.workspaceId),
-      submittedAt: new Date(),
-      status: 'pending'
+    await addDoc(collection(db, 'test'), {
+      message: 'Hello Firebase!',
+      timestamp: new Date()
     });
-    
-    console.log('🎉 SUCCESS! Document written with ID: ', docRef.id);
-    setNewPost({ title: '', content: '', workspaceId: '', image: null });
-    setCurrentView('dashboard');
+    console.log('Success!');
   } catch (error) {
-    console.error('💥 ERROR saving to Firebase:', error);
-    alert('Error saving submission: ' + error.message);
+    console.error('Error:', error);
   }
 };
     
