@@ -791,12 +791,12 @@ const Navigation = () => (
                         <span className="ml-2 text-green-600">• {submission.businessName}</span>
                       )}
                     </div>
-                    <div className="text-gray-700">
+<div className="text-gray-700">
   {submission.type === 'blog_post' ? (
     <div 
-      className="prose prose-sm"
+      className="prose prose-sm max-w-none line-clamp-3"
       dangerouslySetInnerHTML={{ 
-        __html: submission.content.substring(0, 300) + '...'
+        __html: submission.content
       }}
       style={{
         overflow: 'hidden',
