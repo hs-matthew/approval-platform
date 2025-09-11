@@ -671,11 +671,26 @@ if (currentView === 'workspaces') {
 />
             </div>
 
-            <button
-              className="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 transition-colors"
-            >
-              Create Workspace
-            </button>
+<button
+  onClick={async () => {
+    if (!newWorkspace.name.trim()) {
+      alert('Please enter a workspace name.');
+      return;
+    }
+    
+    await handleAddWorkspace({
+      name: newWorkspace.name,
+      description: newWorkspace.description,
+      clientId: currentUser.id // Assign to current user as client
+    });
+    
+    // Clear the form
+    setNewWorkspace({ name: '', description: '' });
+  }}
+  className="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 transition-colors"
+>
+  Create Workspace
+</button>
           </div>
         </div>
 
