@@ -850,4 +850,26 @@ const Navigation = () => (
   );
 };
 
+const Footer = () => (
+  <footer className="bg-white border-t border-gray-200 py-6 mt-8">
+    <div className="max-w-6xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-4">
+      <div className="flex items-center gap-3">
+        <img
+          src="/assets/hs-logo-1200.png"   // ✅ make sure logo.png is in /public
+          alt="Company Logo"
+          className="h-6 w-auto object-contain"
+        />
+        <span className="text-sm text-gray-500">
+          © {new Date().getFullYear()} Headspace Media, LLC. All rights reserved.
+        </span>
+      </div>
+      <div className="flex gap-4 text-sm text-gray-500">
+        <a href="/privacy" className="hover:text-gray-700">Privacy Policy</a>
+        <a href="/terms" className="hover:text-gray-700">Terms of Service</a>
+        <a href="/contact" className="hover:text-gray-700">Contact</a>
+      </div>
+    </div>
+  </footer>
+);
+
 export default ApprovalPlatform;
