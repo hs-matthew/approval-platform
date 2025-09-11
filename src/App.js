@@ -443,6 +443,14 @@ const Navigation = () => (
 >
   Manage Workspaces
 </button>
+    <button
+  onClick={() => setCurrentView('users')}
+  className={`px-3 py-2 rounded-md text-sm font-medium ${
+    currentView === 'users' ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:text-gray-900'
+  }`}
+>
+  Manage Users
+</button>
           </nav>
         </div>
         <div className="flex items-center gap-4">
@@ -761,6 +769,110 @@ if (currentView === 'workspaces') {
                   <p className="text-xs text-gray-500 mt-2">
                     Created: {new Date(workspace.createdAt).toLocaleDateString()}
                   </p>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+      <Footer />
+    </div>
+  );
+}
+
+if (currentView === 'users') {
+  return (
+    <div className="min-h-screen bg-gray-100">
+      <Navigation />
+      <div className="max-w-4xl mx-auto p-6">
+        <div className="mb-6">
+          <h2 className="text-2xl font-bold text-gray-900">Manage Users</h2>
+          <p className="text-gray-600">Create and manage user accounts</p>
+        </div>
+
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Add New User</h3>
+          
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Full Name *</label>
+              <input
+                type="text"
+                value={newUser.name}
+                onChange={(e) => setNewUser(prev => ({ ...prev, name: e.target.value }))}
+                placeholder="Enter full name"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Email *</label>
+              <input
+                type="email"
+                value={newUser.email}
+                onChange={(e) => setNewUser(prev => ({ ...prev, email: e.target.value }))}
+                placeholder="Enter email address"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Role *</label>
+              <select
+                value={newUser.role}
+                onChange={(e) => setNewUser(prev => ({ ...prev, role: e.target.value }))}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="writer">Writer</option>
+                <option value="client">Client</option>
+                <option value="admin">Admin</option>
+              </select>
+            </div>
+
+            <button
+              onClick={async () => {
+                if (!newUser.name.trim() || !newUser.email.trim()) {
+                  alert('Please enter name and email.');
+                  return;
+                }
+                
+                await handleAddUser(newUser);
+                setNewUser({ name: '', email: '', role: 'writer' });
+              }}
+              className="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 transition-colors"
+            >
+              Create User
+            </button>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Existing Users</h3>
+          
+          {users.length === 0 ? (
+            <p className="text-gray-500">No users created yet.</p>
+          ) : (
+            <div className="space-y-4">
+              {users.map((user) => (
+                <div key={user.id} className="border border-gray-200 rounded-lg p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="font-semibold text-gray-900">{user.name}</h4>
+                      <p className="text-gray-600 text-sm">{user.email}</p>
+                      <div className="flex items-center gap-2 mt-1">
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                          user.role === 'admin' ? 'bg-purple-100 text-purple-600' :
+                          user.role === 'client' ? 'bg-green-100 text-green-600' :
+                          'bg-blue-100 text-blue-600'
+                        }`}>
+                          {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
+                        </span>
+                        <span className="text-xs text-gray-500">
+                          Created: {new Date(user.createdAt).toLocaleDateString()}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               ))}
             </div>
