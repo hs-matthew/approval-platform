@@ -3,6 +3,19 @@ import { Check, X, MessageSquare, Edit, Eye, Clock, Image, Bold, Italic, Underli
 import { db } from './firebase';
 import { collection, addDoc, onSnapshot } from 'firebase/firestore';
 
+const reviewStyles = `
+  table { border-collapse: collapse; width: 100%; margin: 1rem 0; }
+  th, td { border: 1px solid #d1d5db; padding: 0.5rem; text-align: left; }
+  th { background-color: #f3f4f6; font-weight: 600; }
+  ul { list-style-type: disc; margin-left: 1.5rem; margin: 1rem 0; }
+  li { margin: 0.5rem 0; }
+  h1, h2, h3 { margin: 1.5rem 0 1rem 0; font-weight: 600; }
+  h1 { font-size: 2rem; }
+  h2 { font-size: 1.5rem; }
+  h3 { font-size: 1.25rem; }
+  p { margin: 1rem 0; }
+`;
+
 const ApprovalPlatform = () => {
   console.log('Firebase connected:', db);
   const [currentUser] = useState({
@@ -626,22 +639,23 @@ const Navigation = () => (
                 )}
 
 <div className="prose prose-lg max-w-none">
-<div 
-  className="prose prose-lg max-w-none text-gray-800 prose-headings:text-gray-900 prose-links:text-blue-600 prose-strong:text-gray-900"
-  dangerouslySetInnerHTML={{ 
-    __html: selectedSubmission.content
-      .replace(/&lt;/g, '<')
-      .replace(/&gt;/g, '>')
-      .replace(/&amp;/g, '&')
-      .replace(/&quot;/g, '"')
-      .replace(/&#39;/g, "'")
-      .replace(/&nbsp;/g, ' ')
-  }}
-  style={{
-    lineHeight: '1.7',
-    fontSize: '16px'
-  }}
-/>
+<style dangerouslySetInnerHTML={{ __html: reviewStyles }} />
+    <div 
+      className="text-gray-800 leading-relaxed prose-headings:text-gray-900 prose-links:text-blue-600 prose-strong:text-gray-900"
+      dangerouslySetInnerHTML={{ 
+        __html: selectedSubmission.content
+          .replace(/&lt;/g, '<')
+          .replace(/&gt;/g, '>')
+          .replace(/&amp;/g, '&')
+          .replace(/&quot;/g, '"')
+          .replace(/&#39;/g, "'")
+          .replace(/&nbsp;/g, ' ')
+      }}
+      style={{
+        lineHeight: '1.7',
+        fontSize: '16px'
+      }}
+    />
   </div>
                   </>
             )}
