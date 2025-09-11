@@ -853,9 +853,8 @@ const Navigation = () => (
   );
 };
 
-// Add this Footer component before the ApprovalPlatform component
 const Footer = () => (
-  <footer className="bg-gray-800 text-white py-8 mt-auto">
+  <footer className="bg-gray-800 text-white py-8 mt-12">
     <div className="max-w-6xl mx-auto px-6">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
         <div>
