@@ -25,24 +25,7 @@ const ApprovalPlatform = () => {
     role: "admin"
   });
 
-  const [workspaces, setWorkspaces] = useState([
-    {
-      id: 1,
-      name: "TechCorp Solutions",
-      description: "Technology blog content for TechCorp",
-      clientId: 2,
-      writers: [3, 4],
-      createdAt: "2024-03-01T10:00:00Z"
-    },
-    {
-      id: 2,
-      name: "Health & Wellness Co",
-      description: "Health and wellness content", 
-      clientId: 5,
-      writers: [4],
-      createdAt: "2024-03-05T14:30:00Z"
-    }
-  ]);
+  const [workspaces, setWorkspaces] = useState([]);
 
   const [users, setUsers] = useState([
     { id: 1, name: "Admin User", email: "admin@company.com", role: "admin" },
@@ -100,6 +83,32 @@ useEffect(() => {
   };
 
   loadSubmissions();
+}, []);
+
+// Load workspaces from Firebase when component starts
+useEffect(() => {
+  const loadWorkspaces = async () => {
+    try {
+      console.log('Loading workspaces from Firebase...');
+      const workspacesRef = collection(db, 'workspaces');
+      const querySnapshot = await getDocs(workspacesRef);
+      
+      const loadedWorkspaces = [];
+      querySnapshot.forEach((doc) => {
+        loadedWorkspaces.push({
+          id: doc.id,
+          ...doc.data()
+        });
+      });
+      
+      console.log('Loaded workspaces:', loadedWorkspaces);
+      setWorkspaces(loadedWorkspaces);
+    } catch (error) {
+      console.error('Error loading workspaces:', error);
+    }
+  };
+
+  loadWorkspaces();
 }, []);
   
   const fileInputRef = useRef(null);
@@ -244,6 +253,32 @@ const handleSubmitPost = async () => {
   } catch (error) {
     console.error('Error adding document: ', error);
     alert('Error saving submission. Please try again.');
+  }
+};
+
+const handleAddWorkspace = async (workspaceData) => {
+  try {
+    const workspace = {
+      name: workspaceData.name,
+      description: workspaceData.description,
+      clientId: workspaceData.clientId,
+      writers: workspaceData.writers || [],
+      createdAt: new Date().toISOString()
+    };
+
+    const docRef = await addDoc(collection(db, 'workspaces'), workspace);
+    console.log('Workspace created with ID: ', docRef.id);
+    
+    const workspaceWithId = {
+      id: docRef.id,
+      ...workspace
+    };
+    
+    setWorkspaces(prev => [...prev, workspaceWithId]);
+    return workspaceWithId;
+  } catch (error) {
+    console.error('Error adding workspace: ', error);
+    alert('Error creating workspace. Please try again.');
   }
 };
   
