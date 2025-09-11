@@ -253,13 +253,10 @@ const handleSubmitPost = async () => {
   };
 
 const Navigation = () => (
-  <div className="bg-white border-b border-gray-200 px-6 py-4">
-    <div className="flex items-center justify-between">
-      
-      {/* Left side: logo + nav */}
-      <div className="flex items-center gap-6">
-        <a
-          href="#"
+    <div className="bg-white border-b border-gray-200 px-6 py-4">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-6">
+  <a href="#"
           onClick={(e) => {
             e.preventDefault();
             setCurrentView('dashboard');
@@ -267,21 +264,19 @@ const Navigation = () => (
           className="flex items-center"
         >
           <img
-            src="/assets/hs-logo-1200.png"
+            src="/assets/hs-square-icon.png"
             alt="Company Logo"
             className="h-10 w-auto object-contain"
           />
         </a>
-        
-        <nav className="flex gap-4">
-          <button
-            onClick={() => setCurrentView('dashboard')}
-            className={`px-3 py-2 rounded-md text-sm font-medium ${
-              currentView === 'dashboard'
-                ? 'bg-blue-100 text-blue-700'
-                : 'text-gray-600 hover:text-gray-900'
-            }`}
-          >
+          <h1 className="text-xl font-bold text-gray-900">Content Approval Platform</h1>
+          <nav className="flex gap-4">
+            <button
+              onClick={() => setCurrentView('dashboard')}
+              className={`px-3 py-2 rounded-md text-sm font-medium ${
+                currentView === 'dashboard' ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
             Dashboard
           </button>
           <button
