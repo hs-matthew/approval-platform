@@ -588,7 +588,7 @@ const Navigation = () => (
                     />
                   </div>
                 )}
-                
+
 <div className="prose prose-lg max-w-none">
 <div 
   className="text-gray-800 leading-relaxed prose-headings:text-gray-900 prose-links:text-blue-600 prose-strong:text-gray-900"
@@ -606,7 +606,8 @@ const Navigation = () => (
     fontSize: '16px'
   }}
 />
-
+  </div>
+                  </>
             )}
 
             {selectedSubmission.type === 'gbp_service' && (
