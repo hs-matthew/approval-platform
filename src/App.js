@@ -247,11 +247,7 @@ const handleSubmitPost = async () => {
 
   console.log('Trying to save...');
 
-  const nextId =
-    submissions.length ? Math.max(...submissions.map(s => s.id)) + 1 : 1;
-
   const submission = {
-    id: nextId,
     type: 'blog_post',
     title: newPost.title,
     content: newPost.content,
@@ -263,23 +259,25 @@ const handleSubmitPost = async () => {
   };
 
   try {
-    // Optional: write something to Firestore too
-    await addDoc(collection(db, 'submissions'), {
-      message: 'Hello Firebase!',
-      timestamp: new Date()
-    });
-    console.log('Success!');
+    // Save the actual submission data to Firestore
+    const docRef = await addDoc(collection(db, 'submissions'), submission);
+    console.log('Document written with ID: ', docRef.id);
+    
+    // Add to local state with the Firestore document ID
+    const submissionWithId = {
+      id: docRef.id,
+      ...submission
+    };
+    
+    setSubmissions(prev => [submissionWithId, ...prev]);
+    setNewPost({ title: '', content: '', workspaceId: '', image: null });
+    setCurrentView('dashboard');
   } catch (error) {
-    console.error('Error:', error);
-    // You might still want to proceed locally even if the write fails
+    console.error('Error adding document: ', error);
+    alert('Error saving submission. Please try again.');
   }
-
-  setSubmissions(prev => [submission, ...prev]);
-  setNewPost({ title: '', content: '', workspaceId: '', image: null });
-  setCurrentView('dashboard');
 };
-
-
+  
   const handleImageUpload = (event) => {
     const file = event.target.files[0];
     if (file) {
