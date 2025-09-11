@@ -121,28 +121,48 @@ const ApprovalPlatform = () => {
     return filtered;
   };
 
+// Replace your existing createSafePreview function with this version that handles full HTML documents:
+
 const createSafePreview = (htmlContent, maxLength = 200) => {
   if (!htmlContent) return '';
   
   console.log('Input HTML:', htmlContent);
   
-  // Force fallback to manual HTML stripping since DOM method isn't working
-  let textOnly = htmlContent
-    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '') // Remove script tags
-    .replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, '') // Remove style tags
-    .replace(/<[^>]*>/g, '') // Remove all HTML tags
-    .replace(/&nbsp;/g, ' ') // Replace non-breaking spaces
-    .replace(/&amp;/g, '&') // Decode HTML entities
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'")
-    .replace(/\s+/g, ' ') // Collapse multiple whitespace
-    .trim();
-  
-  console.log('Output text:', textOnly);
-  
-  return textOnly.substring(0, maxLength) + (textOnly.length > maxLength ? '...' : '');
+  try {
+    // Create a temporary element to parse the HTML
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = htmlContent;
+    
+    // Get text content from the parsed HTML
+    let textOnly = tempDiv.textContent || tempDiv.innerText || '';
+    
+    // If that didn't work (sometimes happens with complex HTML), use regex fallback
+    if (!textOnly || textOnly.trim().length === 0) {
+      textOnly = htmlContent
+        .replace(/<!--[\s\S]*?-->/g, '') // Remove comments first
+        .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '') // Remove script tags
+        .replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, '') // Remove style tags
+        .replace(/<[^>]*>/g, '') // Remove all HTML tags
+        .replace(/&nbsp;/g, ' ') // Replace non-breaking spaces
+        .replace(/&amp;/g, '&') // Decode HTML entities
+        .replace(/&lt;/g, '<')
+        .replace(/&gt;/g, '>')
+        .replace(/&quot;/g, '"')
+        .replace(/&#39;/g, "'")
+        .replace(/\s+/g, ' ') // Collapse multiple whitespace
+        .trim();
+    }
+    
+    // Clean up any extra whitespace
+    textOnly = textOnly.replace(/\s+/g, ' ').trim();
+    
+    console.log('Output text:', textOnly);
+    
+    return textOnly.substring(0, maxLength) + (textOnly.length > maxLength ? '...' : '');
+  } catch (error) {
+    console.error('Error in createSafePreview:', error);
+    return 'Error loading preview';
+  }
 };
 
   const handleApprove = (id) => {
