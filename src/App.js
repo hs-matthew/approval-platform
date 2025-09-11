@@ -256,13 +256,7 @@ const Navigation = () => (
     <div className="bg-white border-b border-gray-200 px-6 py-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-6">
-  <a href="#"
-          onClick={(e) => {
-            e.preventDefault();
-            setCurrentView('dashboard');
-          }}
-          className="flex items-center"
-        >
+  <a href="#">
           <img
             src="/assets/hs-square-icon.png"
             alt="Company Logo"
@@ -277,32 +271,6 @@ const Navigation = () => (
                 currentView === 'dashboard' ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:text-gray-900'
               }`}
             >
-            Dashboard
-          </button>
-          <button
-            onClick={() => setCurrentView('submit')}
-            className={`px-3 py-2 rounded-md text-sm font-medium ${
-              currentView === 'submit'
-                ? 'bg-blue-100 text-blue-700'
-                : 'text-gray-600 hover:text-gray-900'
-            }`}
-          >
-            Submit Content
-          </button>
-        </nav>
-      </div>
-
-      {/* Right side: user info */}
-      <div className="flex items-center gap-4">
-        <div className="px-3 py-1 rounded-full text-xs font-medium text-purple-600 bg-purple-100">
-          Admin
-        </div>
-        <div className="text-sm text-gray-600">{currentUser.name}</div>
-      </div>
-    </div>
-  </div>
-);
-
               Dashboard
             </button>
             <button
