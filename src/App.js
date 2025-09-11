@@ -252,18 +252,62 @@ const handleSubmitPost = async () => {
     }
   };
 
-  const Navigation = () => (
-    <div className="bg-white border-b border-gray-200 px-6 py-4">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-6">
-          <h1 className="text-xl font-bold text-gray-900">Content Approval Platform</h1>
-          <nav className="flex gap-4">
-            <button
-              onClick={() => setCurrentView('dashboard')}
-              className={`px-3 py-2 rounded-md text-sm font-medium ${
-                currentView === 'dashboard' ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:text-gray-900'
-              }`}
-            >
+const Navigation = () => (
+  <div className="bg-white border-b border-gray-200 px-6 py-4">
+    <div className="flex items-center justify-between">
+      
+      {/* Left side: logo + nav */}
+      <div className="flex items-center gap-6">
+        <a
+          href="#"
+          onClick={(e) => {
+            e.preventDefault();
+            setCurrentView('dashboard');
+          }}
+          className="flex items-center"
+        >
+          <img
+            src="/assets/hs-logo-1200.png"
+            alt="Company Logo"
+            className="h-10 w-auto object-contain"
+          />
+        </a>
+        
+        <nav className="flex gap-4">
+          <button
+            onClick={() => setCurrentView('dashboard')}
+            className={`px-3 py-2 rounded-md text-sm font-medium ${
+              currentView === 'dashboard'
+                ? 'bg-blue-100 text-blue-700'
+                : 'text-gray-600 hover:text-gray-900'
+            }`}
+          >
+            Dashboard
+          </button>
+          <button
+            onClick={() => setCurrentView('submit')}
+            className={`px-3 py-2 rounded-md text-sm font-medium ${
+              currentView === 'submit'
+                ? 'bg-blue-100 text-blue-700'
+                : 'text-gray-600 hover:text-gray-900'
+            }`}
+          >
+            Submit Content
+          </button>
+        </nav>
+      </div>
+
+      {/* Right side: user info */}
+      <div className="flex items-center gap-4">
+        <div className="px-3 py-1 rounded-full text-xs font-medium text-purple-600 bg-purple-100">
+          Admin
+        </div>
+        <div className="text-sm text-gray-600">{currentUser.name}</div>
+      </div>
+    </div>
+  </div>
+);
+
               Dashboard
             </button>
             <button
