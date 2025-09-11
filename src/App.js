@@ -122,7 +122,7 @@ const ApprovalPlatform = () => {
   };
 
 const createSafePreview = (htmlContent, maxLength = 200) => {
-  // Create a temporary element to decode HTML entities
+  // Create a temporary element to decode HTML entities and strip tags
   const tempDiv = document.createElement('div');
   tempDiv.innerHTML = htmlContent;
   
