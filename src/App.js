@@ -590,15 +590,7 @@ const Navigation = () => (
 <div className="prose prose-lg max-w-none">
 <div 
   className="text-gray-800 leading-relaxed prose-headings:text-gray-900 prose-links:text-blue-600 prose-strong:text-gray-900"
-  dangerouslySetInnerHTML={{ 
-    __html: selectedSubmission.content
-      .replace(/&lt;/g, '<')
-      .replace(/&gt;/g, '>')
-      .replace(/&amp;/g, '&')
-      .replace(/&quot;/g, '"')
-      .replace(/&#39;/g, "'")
-      .replace(/&nbsp;/g, ' ')
-  }}
+  dangerouslySetInnerHTML={createSafePreview(submission.content, 200)}
   style={{
     lineHeight: '1.7',
     fontSize: '16px'
