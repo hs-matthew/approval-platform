@@ -264,7 +264,7 @@ const handleSubmitPost = async () => {
 
   try {
     // Optional: write something to Firestore too
-    await addDoc(collection(db, 'test'), {
+    await addDoc(collection(db, 'submissions'), {
       message: 'Hello Firebase!',
       timestamp: new Date()
     });
