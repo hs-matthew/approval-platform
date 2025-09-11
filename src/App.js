@@ -1,7 +1,7 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Check, X, MessageSquare, Edit, Eye, Clock, Image, Bold, Italic, Underline, List, Link2, AlignLeft, AlignCenter, AlignRight, Users, Building, UserPlus, Filter, MapPin, Star, Phone, Globe, Calendar, FileText } from 'lucide-react';
 import { db } from './firebase';
-import { collection, addDoc, onSnapshot } from 'firebase/firestore';
+import { collection, addDoc, onSnapshot, getDocs } from 'firebase/firestore';
 
 const reviewStyles = `
   table { border-collapse: collapse; width: 100%; margin: 1rem 0; }
@@ -99,6 +99,32 @@ const ApprovalPlatform = () => {
     image: null 
   });
 
+// Load submissions from Firebase when component starts
+useEffect(() => {
+  const loadSubmissions = async () => {
+    try {
+      console.log('Loading submissions from Firebase...');
+      const submissionsRef = collection(db, 'submissions');
+      const querySnapshot = await getDocs(submissionsRef);
+      
+      const loadedSubmissions = [];
+      querySnapshot.forEach((doc) => {
+        loadedSubmissions.push({
+          id: doc.id,
+          ...doc.data()
+        });
+      });
+      
+      console.log('Loaded submissions:', loadedSubmissions);
+      setSubmissions(loadedSubmissions);
+    } catch (error) {
+      console.error('Error loading submissions:', error);
+    }
+  };
+
+  loadSubmissions();
+}, []);
+  
   const fileInputRef = useRef(null);
   const editorRef = useRef(null);
 
