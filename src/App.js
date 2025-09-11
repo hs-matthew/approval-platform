@@ -145,23 +145,19 @@ const ApprovalPlatform = () => {
     setCurrentView('dashboard');
   };
 
- const handleSubmitPost = () => {
-    if (!newPost.title.trim() || !newPost.content.trim() || !newPost.workspaceId) {
-      alert('Please fill in all required fields.');
-      return;
-    }
-    
-    const submission = {
-      id: Date.now(),
-      type: 'blog_post',
-      title: newPost.title,
-      content: newPost.content,
-      image: newPost.image,
-      authorId: currentUser.id,
-      workspaceId: parseInt(newPost.workspaceId),
-      submittedAt: new Date().toISOString(),
-      status: 'pending'
-    };
+const handleSubmitPost = async () => {
+  console.log('Trying to save...');
+  
+  try {
+    await addDoc(collection(db, 'test'), {
+      message: 'Hello Firebase!',
+      timestamp: new Date()
+    });
+    console.log('Success!');
+  } catch (error) {
+    console.error('Error:', error);
+  }
+};
     
     setSubmissions(prev => [submission, ...prev]);
     setNewPost({ title: '', content: '', workspaceId: '', image: null });
