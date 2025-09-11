@@ -26,6 +26,11 @@ const ApprovalPlatform = () => {
   });
 
   const [workspaces, setWorkspaces] = useState([]);
+  
+  const [newWorkspace, setNewWorkspace] = useState({
+  name: '',
+  description: ''
+});
 
   const [users, setUsers] = useState([
     { id: 1, name: "Admin User", email: "admin@company.com", role: "admin" },
@@ -647,19 +652,23 @@ if (currentView === 'workspaces') {
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Workspace Name *</label>
               <input
-                type="text"
-                placeholder="Enter workspace name"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
+  type="text"
+  value={newWorkspace.name}
+  onChange={(e) => setNewWorkspace(prev => ({ ...prev, name: e.target.value }))}
+  placeholder="Enter workspace name"
+  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+/>
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
-              <textarea
-                rows={3}
-                placeholder="Enter workspace description"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
+<textarea
+  rows={3}
+  value={newWorkspace.description}
+  onChange={(e) => setNewWorkspace(prev => ({ ...prev, description: e.target.value }))}
+  placeholder="Enter workspace description"
+  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+/>
             </div>
 
             <button
