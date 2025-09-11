@@ -145,19 +145,11 @@ const ApprovalPlatform = () => {
     setCurrentView('dashboard');
   };
 
-const handleSubmitPost = async () => {
-  console.log('Trying to save...');
-  
-  try {
-    await addDoc(collection(db, 'test'), {
-      message: 'Hello Firebase!',
-      timestamp: new Date()
-    });
-    console.log('Success!');
-  } catch (error) {
-    console.error('Error:', error);
-  }
-}
+ const handleSubmitPost = () => {
+    if (!newPost.title.trim() || !newPost.content.trim() || !newPost.workspaceId) {
+      alert('Please fill in all required fields.');
+      return;
+    }
     
     const submission = {
       id: Date.now(),
