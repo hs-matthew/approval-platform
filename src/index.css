@@ -2,3 +2,73 @@ body {
   margin: 0;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
 }
+/* Enhanced prose styling for HTML content */
+.prose h1 { 
+  font-size: 2rem; 
+  font-weight: 700; 
+  margin: 1.5rem 0 1rem 0;
+  color: #1f2937;
+}
+
+.prose h2 { 
+  font-size: 1.5rem; 
+  font-weight: 600; 
+  margin: 1.25rem 0 0.75rem 0;
+  color: #374151;
+}
+
+.prose h3 { 
+  font-size: 1.25rem; 
+  font-weight: 600; 
+  margin: 1rem 0 0.5rem 0;
+  color: #4b5563;
+}
+
+.prose p { 
+  margin: 1rem 0; 
+  line-height: 1.7;
+}
+
+.prose ul, .prose ol { 
+  margin: 1rem 0; 
+  padding-left: 1.5rem;
+}
+
+.prose li { 
+  margin: 0.5rem 0; 
+}
+
+.prose strong { 
+  font-weight: 600; 
+  color: #1f2937;
+}
+
+.prose em { 
+  font-style: italic; 
+  color: #4b5563;
+}
+
+.prose a { 
+  color: #2563eb; 
+  text-decoration: underline;
+}
+
+.prose a:hover { 
+  color: #1d4ed8; 
+}
+
+.prose code { 
+  background-color: #f3f4f6; 
+  padding: 0.2rem 0.4rem; 
+  border-radius: 0.25rem; 
+  font-size: 0.875rem;
+  color: #be123c;
+}
+
+.prose blockquote { 
+  border-left: 4px solid #e5e7eb; 
+  padding-left: 1rem; 
+  margin: 1.5rem 0; 
+  font-style: italic; 
+  color: #6b7280;
+}
