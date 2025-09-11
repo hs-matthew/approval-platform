@@ -652,6 +652,7 @@ const Navigation = () => (
             </div>
           )}
         </div>
+          <Footer />
       </div>
     );
   }
