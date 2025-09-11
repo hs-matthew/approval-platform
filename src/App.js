@@ -792,16 +792,23 @@ const Navigation = () => (
                       )}
                     </div>
                     <div className="text-gray-700">
-                      {submission.type === 'blog_post' ? (
-                        <div 
-                          dangerouslySetInnerHTML={{ 
-                            __html: submission.content.replace(/<[^>]*>/g, '').substring(0, 200) + '...' 
-                          }} 
-                        />
-                      ) : (
-                        <div>{submission.description.substring(0, 200)}...</div>
-                      )}
-                    </div>
+  {submission.type === 'blog_post' ? (
+    <div 
+      className="prose prose-sm"
+      dangerouslySetInnerHTML={{ 
+        __html: submission.content.substring(0, 300) + '...'
+      }}
+      style={{
+        overflow: 'hidden',
+        display: '-webkit-box',
+        WebkitLineClamp: 3,
+        WebkitBoxOrient: 'vertical'
+      }}
+    />
+  ) : (
+    <div>{submission.description.substring(0, 200)}...</div>
+  )}
+</div>
                   </div>
                   
                   <div className="ml-6 flex flex-col items-end gap-3">
