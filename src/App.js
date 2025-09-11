@@ -146,9 +146,30 @@ const ApprovalPlatform = () => {
   };
 
 const handleSubmitPost = async () => {
+  if (!newPost.title.trim() || !newPost.workspaceId || !newPost.content.trim()) {
+    alert('Please fill in Workspace, Title, and Content.');
+    return;
+  }
+
   console.log('Trying to save...');
-  
+
+  const nextId =
+    submissions.length ? Math.max(...submissions.map(s => s.id)) + 1 : 1;
+
+  const submission = {
+    id: nextId,
+    type: 'blog_post',
+    title: newPost.title,
+    content: newPost.content,
+    authorId: currentUser.id,
+    workspaceId: parseInt(newPost.workspaceId, 10),
+    submittedAt: new Date().toISOString(),
+    status: 'pending',
+    image: newPost.image || null
+  };
+
   try {
+    // Optional: write something to Firestore too
     await addDoc(collection(db, 'test'), {
       message: 'Hello Firebase!',
       timestamp: new Date()
@@ -156,13 +177,14 @@ const handleSubmitPost = async () => {
     console.log('Success!');
   } catch (error) {
     console.error('Error:', error);
+    // You might still want to proceed locally even if the write fails
   }
+
+  setSubmissions(prev => [submission, ...prev]);
+  setNewPost({ title: '', content: '', workspaceId: '', image: null });
+  setCurrentView('dashboard');
 };
-    
-    setSubmissions(prev => [submission, ...prev]);
-    setNewPost({ title: '', content: '', workspaceId: '', image: null });
-    setCurrentView('dashboard');
-  };
+
 
   const handleImageUpload = (event) => {
     const file = event.target.files[0];
