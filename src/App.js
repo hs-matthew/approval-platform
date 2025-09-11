@@ -101,29 +101,34 @@ const ApprovalPlatform = () => {
 
 // Load submissions from Firebase when component starts
 useEffect(() => {
-  const loadSubmissions = async () => {
-    try {
-      console.log('Loading submissions from Firebase...');
-      const submissionsRef = collection(db, 'submissions');
-      const querySnapshot = await getDocs(submissionsRef);
-      
-      const loadedSubmissions = [];
-      querySnapshot.forEach((doc) => {
-        loadedSubmissions.push({
-          id: doc.id,
-          ...doc.data()
-        });
+const loadSubmissions = async () => {
+  try {
+    console.log('Loading submissions from Firebase...');
+    console.log('Database object:', db);
+    
+    const submissionsRef = collection(db, 'submissions');
+    console.log('Collection reference:', submissionsRef);
+    
+    const querySnapshot = await getDocs(submissionsRef);
+    console.log('Query snapshot:', querySnapshot);
+    console.log('Number of documents found:', querySnapshot.size);
+    
+    const loadedSubmissions = [];
+    querySnapshot.forEach((doc) => {
+      console.log('Document ID:', doc.id);
+      console.log('Document data:', doc.data());
+      loadedSubmissions.push({
+        id: doc.id,
+        ...doc.data()
       });
-      
-      console.log('Loaded submissions:', loadedSubmissions);
-      setSubmissions(loadedSubmissions);
-    } catch (error) {
-      console.error('Error loading submissions:', error);
-    }
-  };
-
-  loadSubmissions();
-}, []);
+    });
+    
+    console.log('Final loaded submissions:', loadedSubmissions);
+    setSubmissions(loadedSubmissions);
+  } catch (error) {
+    console.error('Error loading submissions:', error);
+  }
+};
   
   const fileInputRef = useRef(null);
   const editorRef = useRef(null);
