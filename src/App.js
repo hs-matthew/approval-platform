@@ -377,6 +377,14 @@ const Navigation = () => (
             >
               Submit Content
             </button>
+                <button
+  onClick={() => setCurrentView('workspaces')}
+  className={`px-3 py-2 rounded-md text-sm font-medium ${
+    currentView === 'workspaces' ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:text-gray-900'
+  }`}
+>
+  Manage Workspaces
+</button>
           </nav>
         </div>
         <div className="flex items-center gap-4">
