@@ -120,8 +120,9 @@ useEffect(() => {
   const editorRef = useRef(null);
 
   const getUserById = (id) => users.find(user => user.id === id);
-  const getWorkspaceById = (id) => workspaces.find(ws => ws.id === id);
-  
+const getWorkspaceById = (id) => {
+  return workspaces.find(ws => ws.id === id || ws.id === String(id) || String(ws.id) === String(id));
+};  
   const getAccessibleWorkspaces = () => {
     if (currentUser.role === 'admin') return workspaces;
     if (currentUser.role === 'client') return workspaces.filter(ws => ws.clientId === currentUser.id);
@@ -227,20 +228,17 @@ const handleSubmitPost = async () => {
     alert('Please fill in Workspace, Title, and Content.');
     return;
   }
-
   console.log('Trying to save...');
-
   const submission = {
     type: 'blog_post',
     title: newPost.title,
     content: newPost.content,
     authorId: currentUser.id,
-    workspaceId: parseInt(newPost.workspaceId, 10),
+    workspaceId: newPost.workspaceId, // Changed this line - no parseInt
     submittedAt: new Date().toISOString(),
     status: 'pending',
     image: newPost.image || null
   };
-
   try {
     // Save the actual submission data to Firestore
     const docRef = await addDoc(collection(db, 'submissions'), submission);
