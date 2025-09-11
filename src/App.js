@@ -121,13 +121,32 @@ const ApprovalPlatform = () => {
     return filtered;
   };
 
+// Replace your existing createSafePreview function with this improved version:
+
 const createSafePreview = (htmlContent, maxLength = 200) => {
+  if (!htmlContent) return '';
+  
   console.log('Input HTML:', htmlContent);
-  const tempDiv = document.createElement('div');
-  tempDiv.innerHTML = htmlContent;
-  const textOnly = tempDiv.textContent || tempDiv.innerText || '';
-  console.log('Output text:', textOnly);
-  return textOnly.substring(0, maxLength) + (textOnly.length > maxLength ? '...' : '');
+  
+  try {
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = htmlContent;
+    
+    // Get text content, which automatically strips all HTML tags
+    let textOnly = tempDiv.textContent || tempDiv.innerText || '';
+    
+    // Clean up any extra whitespace
+    textOnly = textOnly.replace(/\s+/g, ' ').trim();
+    
+    console.log('Output text:', textOnly);
+    
+    return textOnly.substring(0, maxLength) + (textOnly.length > maxLength ? '...' : '');
+  } catch (error) {
+    console.error('Error in createSafePreview:', error);
+    // Fallback: strip HTML tags manually if DOM method fails
+    let fallbackText = htmlContent.replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim();
+    return fallbackText.substring(0, maxLength) + (fallbackText.length > maxLength ? '...' : '');
+  }
 };
 
   const handleApprove = (id) => {
