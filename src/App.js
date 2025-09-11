@@ -2,6 +2,15 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Check, X, MessageSquare, Edit, Eye, Clock, Image, Bold, Italic, Underline, List, Link2, AlignLeft, AlignCenter, AlignRight, Users, Building, UserPlus, Filter, MapPin, Star, Phone, Globe, Calendar, FileText } from 'lucide-react';
 import { db } from './firebase';
 import { collection, addDoc, onSnapshot, getDocs } from 'firebase/firestore';
+import FirebaseTest from './test';
+
+function App() {
+  return (
+    <div>
+      <FirebaseTest />
+    </div>
+  );
+}
 
 const reviewStyles = `
   table { border-collapse: collapse; width: 100%; margin: 1rem 0; }
