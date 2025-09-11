@@ -1,7 +1,9 @@
 import React, { useState, useRef } from 'react';
 import { Check, X, MessageSquare, Edit, Eye, Clock, Image, Bold, Italic, Underline, List, Link2, AlignLeft, AlignCenter, AlignRight, Users, Building, UserPlus, Filter, MapPin, Star, Phone, Globe, Calendar, FileText } from 'lucide-react';
+import { db } from './firebase';
 
 const ApprovalPlatform = () => {
+  console.log('Firebase connected:', db);
   const [currentUser] = useState({
     id: 1,
     name: "Admin User",
