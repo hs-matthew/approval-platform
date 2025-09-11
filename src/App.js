@@ -122,13 +122,11 @@ const ApprovalPlatform = () => {
   };
 
 const createSafePreview = (htmlContent, maxLength = 200) => {
-  // Create a temporary element to decode HTML entities and strip tags
+  console.log('Input HTML:', htmlContent);
   const tempDiv = document.createElement('div');
   tempDiv.innerHTML = htmlContent;
-  
-  // Get the text content (this strips HTML and decodes entities)
   const textOnly = tempDiv.textContent || tempDiv.innerText || '';
-  
+  console.log('Output text:', textOnly);
   return textOnly.substring(0, maxLength) + (textOnly.length > maxLength ? '...' : '');
 };
 
