@@ -72,3 +72,28 @@ body {
   font-style: italic; 
   color: #6b7280;
 }
+/* Fix extra spacing in HTML content */
+.prose p {
+  margin: 0.75rem 0; /* Reduce from 1rem to 0.75rem */
+}
+
+.prose h2 {
+  margin: 1.5rem 0 0.75rem 0; /* Slightly tighter spacing */
+}
+
+.prose h3 {
+  margin: 1.25rem 0 0.5rem 0; /* Slightly tighter spacing */
+}
+
+.prose ul, .prose ol {
+  margin: 0.75rem 0; /* Reduce spacing around lists */
+}
+
+.prose li {
+  margin: 0.25rem 0; /* Tighter list item spacing */
+}
+
+/* Remove extra spacing between consecutive elements */
+.prose > * + * {
+  margin-top: 0.75rem;
+}
