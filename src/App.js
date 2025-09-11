@@ -844,7 +844,13 @@ const Navigation = () => (
                       )}
                     </div>
 <div className="text-gray-700">
-  TEST PREVIEW IS WORKING
+  {submission.type === 'blog_post' ? (
+    <div>
+      {createSafePreview(submission.content, 200)}
+    </div>
+  ) : (
+    <div>{submission.description.substring(0, 200)}...</div>
+  )}
 </div>
                   </div>
                   
