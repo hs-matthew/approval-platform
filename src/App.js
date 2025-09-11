@@ -11,7 +11,6 @@ function App() {
     </div>
   );
 }
-
 const reviewStyles = `
   table { border-collapse: collapse; width: 100%; margin: 1rem 0; }
   th, td { border: 1px solid #d1d5db; padding: 0.5rem; text-align: left; }
