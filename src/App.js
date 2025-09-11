@@ -52,38 +52,7 @@ const ApprovalPlatform = () => {
     { id: 5, name: "Lisa Chen", email: "lisa@wellness.com", role: "client" }
   ]);
 
-  const [submissions, setSubmissions] = useState([
-    {
-      id: 1,
-      type: "blog_post",
-      title: "Getting Started with React Hooks",
-      content: "<p>React Hooks have revolutionized how we write React components.</p>",
-      authorId: 3,
-      workspaceId: 1,
-      submittedAt: "2024-03-15T10:30:00Z",
-      status: "pending",
-      image: null
-    },
-    {
-      id: 2,
-      type: "gbp_service",
-      title: "Emergency Plumbing Services",
-      businessName: "QuickFix Plumbing",
-      serviceCategory: "Emergency Services",
-      description: "24/7 emergency plumbing services for residential and commercial properties.",
-      serviceAreas: ["Downtown", "Midtown"],
-      pricing: "$150 - $300 per hour",
-      availability: "24/7",
-      phone: "(555) 123-4567",
-      website: "https://quickfixplumbing.com",
-      specialOffers: "10% off first-time customers",
-      authorId: 3,
-      workspaceId: 2,
-      submittedAt: "2024-03-13T16:45:00Z",
-      status: "pending",
-      images: []
-    }
-  ]);
+  const [submissions, setSubmissions] = useState([]);
 
   const [currentView, setCurrentView] = useState('dashboard');
   const [selectedSubmission, setSelectedSubmission] = useState(null);
