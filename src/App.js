@@ -290,7 +290,6 @@ const Navigation = () => (
           <div className="text-sm text-gray-600">{currentUser.name}</div>
         </div>
       </div>
-        <Footer />
     </div>
   );
 
