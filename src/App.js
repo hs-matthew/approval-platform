@@ -130,27 +130,37 @@ const getWorkspaceById = (id) => {
     return [];
   };
 
-  const getFilteredSubmissions = () => {
-    let filtered = submissions;
-    
-    if (currentUser.role === 'client') {
-      const userWorkspaces = workspaces.filter(ws => ws.clientId === currentUser.id);
-      filtered = filtered.filter(sub => userWorkspaces.some(ws => ws.id === sub.workspaceId));
-    } else if (currentUser.role === 'writer') {
-      const userWorkspaces = workspaces.filter(ws => ws.writers.includes(currentUser.id));
-      filtered = filtered.filter(sub => userWorkspaces.some(ws => ws.id === sub.workspaceId) || sub.authorId === currentUser.id);
-    }
-    
-    if (filterWorkspace !== 'all') {
-      filtered = filtered.filter(sub => sub.workspaceId === parseInt(filterWorkspace));
-    }
+const getFilteredSubmissions = () => {
+  let filtered = submissions;
+  
+  console.log('All submissions:', submissions);
+  console.log('Selected filterWorkspace:', filterWorkspace);
+  console.log('All workspaces:', workspaces);
+  
+  if (currentUser.role === 'client') {
+    const userWorkspaces = workspaces.filter(ws => ws.clientId === currentUser.id);
+    filtered = filtered.filter(sub => userWorkspaces.some(ws => ws.id === sub.workspaceId));
+  } else if (currentUser.role === 'writer') {
+    const userWorkspaces = workspaces.filter(ws => ws.writers.includes(currentUser.id));
+    filtered = filtered.filter(sub => userWorkspaces.some(ws => ws.id === sub.workspaceId) || sub.authorId === currentUser.id);
+  }
+  
+  if (filterWorkspace !== 'all') {
+    console.log('Filtering by workspace:', filterWorkspace);
+    console.log('Before workspace filter:', filtered);
+    filtered = filtered.filter(sub => {
+      console.log(`Comparing submission workspaceId "${sub.workspaceId}" with filter "${filterWorkspace}"`);
+      return sub.workspaceId === filterWorkspace || String(sub.workspaceId) === String(filterWorkspace);
+    });
+    console.log('After workspace filter:', filtered);
+  }
 
-    if (filterType !== 'all') {
-      filtered = filtered.filter(sub => sub.type === filterType);
-    }
-    
-    return filtered;
-  };
+  if (filterType !== 'all') {
+    filtered = filtered.filter(sub => sub.type === filterType);
+  }
+  
+  return filtered;
+};
 
 // Replace your existing createSafePreview function with this version that handles double-encoded HTML:
 
