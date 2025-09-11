@@ -133,10 +133,6 @@ const getWorkspaceById = (id) => {
 const getFilteredSubmissions = () => {
   let filtered = submissions;
   
-  console.log('All submissions:', submissions);
-  console.log('Selected filterWorkspace:', filterWorkspace);
-  console.log('All workspaces:', workspaces);
-  
   if (currentUser.role === 'client') {
     const userWorkspaces = workspaces.filter(ws => ws.clientId === currentUser.id);
     filtered = filtered.filter(sub => userWorkspaces.some(ws => ws.id === sub.workspaceId));
@@ -146,13 +142,9 @@ const getFilteredSubmissions = () => {
   }
   
   if (filterWorkspace !== 'all') {
-    console.log('Filtering by workspace:', filterWorkspace);
-    console.log('Before workspace filter:', filtered);
     filtered = filtered.filter(sub => {
-      console.log(`Comparing submission workspaceId "${sub.workspaceId}" with filter "${filterWorkspace}"`);
       return sub.workspaceId === filterWorkspace || String(sub.workspaceId) === String(filterWorkspace);
     });
-    console.log('After workspace filter:', filtered);
   }
 
   if (filterType !== 'all') {
