@@ -32,14 +32,41 @@ const ApprovalPlatform = () => {
   description: ''
 });
 
-  const [users, setUsers] = useState([
-    { id: 1, name: "Admin User", email: "admin@company.com", role: "admin" },
-    { id: 2, name: "John Smith", email: "john@techcorp.com", role: "client" },
-    { id: 3, name: "Sarah Johnson", email: "sarah@writer.com", role: "writer" },
-    { id: 4, name: "Mike Davis", email: "mike@writer.com", role: "writer" },
-    { id: 5, name: "Lisa Chen", email: "lisa@wellness.com", role: "client" }
-  ]);
+  // User management functions
+const handleAddUser = async (userData) => {
+  try {
+    const user = {
+      name: userData.name,
+      email: userData.email,
+      role: userData.role, // 'admin', 'client', or 'writer'
+      createdAt: new Date().toISOString(),
+      isActive: true
+    };
 
+    const docRef = await addDoc(collection(db, 'users'), user);
+    console.log('User created with ID: ', docRef.id);
+    
+    const userWithId = {
+      id: docRef.id,
+      ...user
+    };
+    
+    setUsers(prev => [...prev, userWithId]);
+    return userWithId;
+  } catch (error) {
+    console.error('Error adding user: ', error);
+    alert('Error creating user. Please try again.');
+  }
+};
+  
+  const [users, setUsers] = useState([
+    { id: 1, name: "Admin User", email: "admin@company.com", role: "admin" }, ]);
+
+  const [newUser, setNewUser] = useState({
+  name: '',
+  email: '',
+  role: 'writer'
+});
   const [submissions, setSubmissions] = useState([]);
 
   const [currentView, setCurrentView] = useState('dashboard');
@@ -114,6 +141,32 @@ useEffect(() => {
   };
 
   loadWorkspaces();
+}, []);
+
+// Load users from Firebase when component starts
+useEffect(() => {
+  const loadUsers = async () => {
+    try {
+      console.log('Loading users from Firebase...');
+      const usersRef = collection(db, 'users');
+      const querySnapshot = await getDocs(usersRef);
+      
+      const loadedUsers = [];
+      querySnapshot.forEach((doc) => {
+        loadedUsers.push({
+          id: doc.id,
+          ...doc.data()
+        });
+      });
+      
+      console.log('Loaded users:', loadedUsers);
+      setUsers(loadedUsers);
+    } catch (error) {
+      console.error('Error loading users:', error);
+    }
+  };
+
+  loadUsers();
 }, []);
   
   const fileInputRef = useRef(null);
