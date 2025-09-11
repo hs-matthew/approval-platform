@@ -121,9 +121,14 @@ const ApprovalPlatform = () => {
     return filtered;
   };
 
-  const createSafePreview = (htmlContent, maxLength = 200) => {
-  // Strip HTML tags for preview
-  const textOnly = htmlContent.replace(/<[^>]*>/g, '');
+const createSafePreview = (htmlContent, maxLength = 200) => {
+  // Create a temporary element to decode HTML entities
+  const tempDiv = document.createElement('div');
+  tempDiv.innerHTML = htmlContent;
+  
+  // Get the text content (this strips HTML and decodes entities)
+  const textOnly = tempDiv.textContent || tempDiv.innerText || '';
+  
   return textOnly.substring(0, maxLength) + (textOnly.length > maxLength ? '...' : '');
 };
 
@@ -585,15 +590,22 @@ const Navigation = () => (
                 )}
                 
 <div className="prose prose-lg max-w-none">
-  <div 
-    className="text-gray-800 leading-relaxed prose-headings:text-gray-900 prose-links:text-blue-600 prose-strong:text-gray-900"
-    dangerouslySetInnerHTML={{ __html: selectedSubmission.content }}
-    style={{
-      lineHeight: '1.7',
-      fontSize: '16px'
-    }}
-  />
-</div>
+<div 
+  className="text-gray-800 leading-relaxed prose-headings:text-gray-900 prose-links:text-blue-600 prose-strong:text-gray-900"
+  dangerouslySetInnerHTML={{ 
+    __html: selectedSubmission.content
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&amp;/g, '&')
+      .replace(/&quot;/g, '"')
+      .replace(/&#39;/g, "'")
+      .replace(/&nbsp;/g, ' ')
+  }}
+  style={{
+    lineHeight: '1.7',
+    fontSize: '16px'
+  }}
+/>
               </>
             )}
 
