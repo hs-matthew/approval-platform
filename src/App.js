@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { Check, X, MessageSquare, Edit, Eye, Clock, Image, Bold, Italic, Underline, List, Link2, AlignLeft, AlignCenter, AlignRight, Users, Building, UserPlus, Filter, MapPin, Star, Phone, Globe, Calendar, FileText } from 'lucide-react';
 import { db } from './firebase';
+import { collection, addDoc, onSnapshot } from 'firebase/firestore';
 
 const ApprovalPlatform = () => {
   console.log('Firebase connected:', db);
@@ -144,11 +145,33 @@ const ApprovalPlatform = () => {
     setCurrentView('dashboard');
   };
 
-  const handleSubmitPost = () => {
-    if (!newPost.title.trim() || !newPost.content.trim() || !newPost.workspaceId) {
-      alert('Please fill in all required fields.');
-      return;
-    }
+const handleSubmitPost = async () => {
+  if (!newPost.title.trim() || !newPost.content.trim() || !newPost.workspaceId) {
+    alert('Please fill in all required fields.');
+    return;
+  }
+  
+  try {
+    // Save to Firebase instead of local state
+    await addDoc(collection(db, 'submissions'), {
+      type: 'blog_post',
+      title: newPost.title,
+      content: newPost.content,
+      image: newPost.image,
+      authorId: currentUser.id,
+      workspaceId: parseInt(newPost.workspaceId),
+      submittedAt: new Date(),
+      status: 'pending'
+    });
+    
+    console.log('Saved to Firebase!');
+    setNewPost({ title: '', content: '', workspaceId: '', image: null });
+    setCurrentView('dashboard');
+  } catch (error) {
+    console.error('Error saving:', error);
+    alert('Error saving submission');
+  }
+};
     
     const submission = {
       id: Date.now(),
