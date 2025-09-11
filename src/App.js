@@ -101,34 +101,37 @@ const ApprovalPlatform = () => {
 
 // Load submissions from Firebase when component starts
 useEffect(() => {
-const loadSubmissions = async () => {
-  try {
-    console.log('Loading submissions from Firebase...');
-    console.log('Database object:', db);
-    
-    const submissionsRef = collection(db, 'submissions');
-    console.log('Collection reference:', submissionsRef);
-    
-    const querySnapshot = await getDocs(submissionsRef);
-    console.log('Query snapshot:', querySnapshot);
-    console.log('Number of documents found:', querySnapshot.size);
-    
-    const loadedSubmissions = [];
-    querySnapshot.forEach((doc) => {
-      console.log('Document ID:', doc.id);
-      console.log('Document data:', doc.data());
-      loadedSubmissions.push({
-        id: doc.id,
-        ...doc.data()
+  const loadSubmissions = async () => {
+    try {
+      console.log('Loading submissions from Firebase...');
+      console.log('Database object:', db);
+      
+      const submissionsRef = collection(db, 'submissions');
+      console.log('Collection reference:', submissionsRef);
+      
+      const querySnapshot = await getDocs(submissionsRef);
+      console.log('Query snapshot:', querySnapshot);
+      console.log('Number of documents found:', querySnapshot.size);
+      
+      const loadedSubmissions = [];
+      querySnapshot.forEach((doc) => {
+        console.log('Document ID:', doc.id);
+        console.log('Document data:', doc.data());
+        loadedSubmissions.push({
+          id: doc.id,
+          ...doc.data()
+        });
       });
-    });
-    
-    console.log('Final loaded submissions:', loadedSubmissions);
-    setSubmissions(loadedSubmissions);
-  } catch (error) {
-    console.error('Error loading submissions:', error);
-  }
-};
+      
+      console.log('Final loaded submissions:', loadedSubmissions);
+      setSubmissions(loadedSubmissions);
+    } catch (error) {
+      console.error('Error loading submissions:', error);
+    }
+  };
+
+  loadSubmissions();
+}, []);
   
   const fileInputRef = useRef(null);
   const editorRef = useRef(null);
