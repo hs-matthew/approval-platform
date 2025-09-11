@@ -521,6 +521,7 @@ const Navigation = () => (
             </div>
           )}
         </div>
+           <Footer />
       </div>
     );
   }
@@ -850,26 +851,41 @@ const Navigation = () => (
   );
 };
 
+// Add this Footer component before the ApprovalPlatform component
 const Footer = () => (
-  <footer className="bg-white border-t border-gray-200 py-6 mt-8">
-    <div className="max-w-6xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-4">
-      <div className="flex items-center gap-3">
-        <img
-          src="/assets/hs-logo-1200.png"   // ✅ make sure logo.png is in /public
-          alt="Company Logo"
-          className="h-6 w-auto object-contain"
-        />
-        <span className="text-sm text-gray-500">
-          © {new Date().getFullYear()} Headspace Media, LLC. All rights reserved.
-        </span>
+  <footer className="bg-gray-800 text-white py-8 mt-auto">
+    <div className="max-w-6xl mx-auto px-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div>
+          <h3 className="text-lg font-semibold mb-4">Content Approval Platform</h3>
+          <p className="text-gray-300 text-sm">
+            Streamline your content approval workflow with our powerful platform.
+          </p>
+        </div>
+        <div>
+          <h4 className="text-md font-semibold mb-4">Features</h4>
+          <ul className="text-gray-300 text-sm space-y-2">
+            <li>• Blog Post Management</li>
+            <li>• GBP Service Listings</li>
+            <li>• User Role Management</li>
+            <li>• Real-time Collaboration</li>
+          </ul>
+        </div>
+        <div>
+          <h4 className="text-md font-semibold mb-4">Support</h4>
+          <ul className="text-gray-300 text-sm space-y-2">
+            <li>• Documentation</li>
+            <li>• Help Center</li>
+            <li>• Contact Support</li>
+          </ul>
+        </div>
       </div>
-      <div className="flex gap-4 text-sm text-gray-500">
-        <a href="/privacy" className="hover:text-gray-700">Privacy Policy</a>
-        <a href="/terms" className="hover:text-gray-700">Terms of Service</a>
-        <a href="/contact" className="hover:text-gray-700">Contact</a>
+      <div className="border-t border-gray-700 mt-8 pt-8 text-center">
+        <p className="text-gray-400 text-sm">
+          © {new Date().getFullYear()} Headspace Media, LLC. All rights reserved.
+        </p>
       </div>
     </div>
   </footer>
 );
-
 export default ApprovalPlatform;
