@@ -606,7 +606,7 @@ const Navigation = () => (
     fontSize: '16px'
   }}
 />
-              </>
+
             )}
 
             {selectedSubmission.type === 'gbp_service' && (
