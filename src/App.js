@@ -121,6 +121,12 @@ const ApprovalPlatform = () => {
     return filtered;
   };
 
+  const createSafePreview = (htmlContent, maxLength = 200) => {
+  // Strip HTML tags for preview
+  const textOnly = htmlContent.replace(/<[^>]*>/g, '');
+  return textOnly.substring(0, maxLength) + (textOnly.length > maxLength ? '...' : '');
+};
+
   const handleApprove = (id) => {
     setSubmissions(prev => prev.map(sub => 
       sub.id === id 
@@ -793,18 +799,7 @@ const Navigation = () => (
                     </div>
 <div className="text-gray-700">
   {submission.type === 'blog_post' ? (
-    <div 
-      className="prose prose-sm max-w-none line-clamp-3"
-      dangerouslySetInnerHTML={{ 
-        __html: submission.content
-      }}
-      style={{
-        overflow: 'hidden',
-        display: '-webkit-box',
-        WebkitLineClamp: 3,
-        WebkitBoxOrient: 'vertical'
-      }}
-    />
+    <div>{createSafePreview(submission.content, 200)}</div>
   ) : (
     <div>{submission.description.substring(0, 200)}...</div>
   )}
