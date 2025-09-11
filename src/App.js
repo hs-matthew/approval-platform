@@ -121,7 +121,7 @@ const ApprovalPlatform = () => {
     return filtered;
   };
 
-// Replace your existing createSafePreview function with this version that handles full HTML documents:
+// Replace your existing createSafePreview function with this version that handles double-encoded HTML:
 
 const createSafePreview = (htmlContent, maxLength = 200) => {
   if (!htmlContent) return '';
@@ -129,26 +129,29 @@ const createSafePreview = (htmlContent, maxLength = 200) => {
   console.log('Input HTML:', htmlContent);
   
   try {
-    // Create a temporary element to parse the HTML
+    // First, decode HTML entities in case content is double-encoded
+    let decodedContent = htmlContent
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&amp;/g, '&')
+      .replace(/&quot;/g, '"')
+      .replace(/&#39;/g, "'")
+      .replace(/&nbsp;/g, ' ');
+    
+    // Create a temporary element to parse the now-decoded HTML
     const tempDiv = document.createElement('div');
-    tempDiv.innerHTML = htmlContent;
+    tempDiv.innerHTML = decodedContent;
     
     // Get text content from the parsed HTML
     let textOnly = tempDiv.textContent || tempDiv.innerText || '';
     
-    // If that didn't work (sometimes happens with complex HTML), use regex fallback
+    // If that didn't work, use regex fallback
     if (!textOnly || textOnly.trim().length === 0) {
-      textOnly = htmlContent
+      textOnly = decodedContent
         .replace(/<!--[\s\S]*?-->/g, '') // Remove comments first
         .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '') // Remove script tags
         .replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, '') // Remove style tags
         .replace(/<[^>]*>/g, '') // Remove all HTML tags
-        .replace(/&nbsp;/g, ' ') // Replace non-breaking spaces
-        .replace(/&amp;/g, '&') // Decode HTML entities
-        .replace(/&lt;/g, '<')
-        .replace(/&gt;/g, '>')
-        .replace(/&quot;/g, '"')
-        .replace(/&#39;/g, "'")
         .replace(/\s+/g, ' ') // Collapse multiple whitespace
         .trim();
     }
