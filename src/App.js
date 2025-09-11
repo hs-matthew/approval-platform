@@ -157,7 +157,7 @@ const handleSubmitPost = async () => {
   } catch (error) {
     console.error('Error:', error);
   }
-};
+}
     
     const submission = {
       id: Date.now(),
