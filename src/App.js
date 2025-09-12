@@ -123,6 +123,15 @@ const ApprovalPlatform = () => {
             onAddWorkspace={addWorkspace}
           />
         );
+
+        // Add this RIGHT BEFORE your renderCurrentView function in App.js:
+
+console.log('🔍 App.js Debug:');
+console.log('- users array:', users);
+console.log('- users length:', users?.length);
+console.log('- users loading:', usersLoading); // if you have this variable
+console.log('- current view:', currentView);
+        
       case 'users':
         return (
           <ManageUsers 
