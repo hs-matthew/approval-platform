@@ -1,5 +1,6 @@
 // pages/Dashboard/Dashboard.js
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import { auth } from '../../lib/firebase';
 import { FileText, Clock, Check, X, Filter, Edit, Eye, MessageSquare } from 'lucide-react';
 
 const Dashboard = ({ 
@@ -12,7 +13,45 @@ const Dashboard = ({
   setFilterType,
   onSelectSubmission 
 }) => {
-  // Utility functions (these would normally be in services/utils/)
+  // ---- AUTH: listen for current user ----
+  const [user, setUser] = useState(null);
+  const [authReady, setAuthReady] = useState(false);
+
+  useEffect(() => {
+    const unsub = auth.onAuthStateChanged(u => {
+      setUser(u);
+      setAuthReady(true);
+    });
+    return () => unsub();
+  }, []);
+
+  // While we don't know yet
+  if (!authReady) {
+    return (
+      <div className="max-w-6xl mx-auto p-6">
+        <p className="text-gray-600">Loading…</p>
+      </div>
+    );
+  }
+
+  // Not signed in
+  if (!user) {
+    return (
+      <div className="max-w-6xl mx-auto p-6">
+        <h2 className="text-2xl font-bold text-gray-900 mb-2">Content Dashboard</h2>
+        <p className="text-gray-600 mb-4">You must be signed in to view submissions.</p>
+        {/* Replace this with your real sign-in flow/route */}
+        <a
+          href="/login"
+          className="inline-block bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
+        >
+          Go to Sign In
+        </a>
+      </div>
+    );
+  }
+
+  // Utility functions
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
@@ -101,7 +140,10 @@ const Dashboard = ({
       <div className="max-w-6xl mx-auto p-6">
         <div className="mb-6">
           <h2 className="text-2xl font-bold text-gray-900 mb-2">Content Dashboard</h2>
-          <p className="text-gray-600">Manage and review content submissions across workspaces</p>
+          <p className="text-gray-600">
+            Manage and review content submissions across workspaces
+            <span className="ml-2 text-gray-500">• Signed in as <strong>{user.email}</strong></span>
+          </p>
         </div>
         <div className="text-center py-12">
           <div className="text-gray-400 mb-4">
@@ -122,7 +164,10 @@ const Dashboard = ({
     <div className="max-w-6xl mx-auto p-6">
       <div className="mb-6">
         <h2 className="text-2xl font-bold text-gray-900 mb-2">Content Dashboard</h2>
-        <p className="text-gray-600">Manage and review content submissions across workspaces</p>
+        <p className="text-gray-600">
+          Manage and review content submissions across workspaces
+          <span className="ml-2 text-gray-500">• Signed in as <strong>{user.email}</strong></span>
+        </p>
       </div>
 
       {/* Filters */}
