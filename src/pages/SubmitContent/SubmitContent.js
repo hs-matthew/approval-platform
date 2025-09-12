@@ -1,7 +1,10 @@
 // pages/SubmitContent/SubmitContent.js
 import React, { useState, useRef } from 'react';
 import { FileText, MapPin, Image, Bold, Italic, Underline, List, Link2, AlignLeft, AlignCenter, AlignRight, X } from 'lucide-react';
-
+const SubmitContent = ({ workspaces, onSubmit, currentUser }) => {
+  console.log('SubmitContent props:', { workspaces, onSubmit, currentUser });
+  
+  // Rest of your component...
 const SubmitContent = ({ workspaces, onSubmit, currentUser }) => {
   const [submissionType, setSubmissionType] = useState('blog_post');
   const [newPost, setNewPost] = useState({ 
