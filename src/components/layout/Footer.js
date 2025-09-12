@@ -10,7 +10,7 @@ export default function Footer() {
       <div className="bg-gray-100 h-12"></div>
 
       {/* Actual footer bar */}
-      <div className="bg-gray-700 py-5">
+      <div className="bg-gray-800 py-5">
         <div className="text-center text-sm text-gray-300">
           © {year}{" "}
           <a
