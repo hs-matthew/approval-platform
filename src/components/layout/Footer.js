@@ -5,14 +5,14 @@ export default function Footer() {
   const year = new Date().getFullYear();
 
   return (
-    <footer className="w-full bg-white border-t border-gray-200 py-20">
-      <div className="text-center text-sm text-gray-600">
+    <footer className="w-full bg-gray-900 py-5">
+      <div className="text-center text-sm text-gray-300">
         © {year}{" "}
         <a
           href="https://headspace.media"
           target="_blank"
           rel="noopener noreferrer"
-          className="text-blue-600 hover:underline"
+          className="text-blue-400 hover:underline"
         >
           Headspace Media, LLC.
         </a>{" "}
