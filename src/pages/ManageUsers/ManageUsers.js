@@ -1,13 +1,5 @@
-  import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { UserPlus, Users, Shield, Edit, Mail, AlertCircle, CheckCircle } from 'lucide-react';
-
-const ManageUsers = ({ users, currentUser, onAddUser }) => {
-  console.log('🔍 ManageUsers received:');
-  console.log('- users prop:', users);
-  console.log('- users length:', users?.length);
-  console.log('- users data:', JSON.stringify(users, null, 2));
-
-  // ... rest of your component
   
 const UserForm = ({ 
   users = [], 
