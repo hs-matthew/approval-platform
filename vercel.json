@@ -1,6 +1,8 @@
-// vercel.json at project root
 {
   "rewrites": [
-    { "source": "/(.*)", "destination": "/" }
+    {
+      "source": "/(.*)",
+      "destination": "/"
+    }
   ]
 }
