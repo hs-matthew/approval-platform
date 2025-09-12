@@ -9,6 +9,7 @@ import SubmitContent from "./pages/SubmitContent/SubmitContent";
 import ManageWorkspaces from "./pages/ManageWorkspaces/ManageWorkspaces";
 import ManageUsers from "./pages/ManageUsers/ManageUsers";
 import ReviewRoute from "./pages/ReviewSubmission/ReviewRoute";
+import MonthlySEOReport from "./pages/Reports/MonthlySEOReport";
 
 import ProtectedLayout from "./components/layout/ProtectedLayout";
 import { useAuth } from "./hooks/useAuth";
@@ -138,7 +139,7 @@ export default function App() {
 
         {/* Other placeholders */}
         <Route path="/audits" element={<div className="max-w-6xl mx-auto p-6">Audits (placeholder)</div>} />
-        <Route path="/seo-reports" element={<div className="max-w-6xl mx-auto p-6">SEO Reports (placeholder)</div>} />
+        <Route path="/seo-reports" element={<MonthlySEOReport />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/content" replace />} />
