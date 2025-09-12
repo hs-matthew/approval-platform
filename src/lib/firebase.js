@@ -1,5 +1,6 @@
 // src/lib/firebase.js
 import { initializeApp } from 'firebase/app';
+import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 import { initializeAppCheck, ReCaptchaV3Provider } from 'firebase/app-check';
 
@@ -15,11 +16,14 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 
+// ✅ Firebase Auth
+export const auth = getAuth(app);
+
+// ✅ Firestore
+export const db = getFirestore(app);
+
 // ✅ App Check with reCAPTCHA v3
-// This runs in the browser; CRA bundles REACT_APP_* at build time
 initializeAppCheck(app, {
   provider: new ReCaptchaV3Provider(process.env.REACT_APP_RECAPTCHA_V3_KEY),
   isTokenAutoRefreshEnabled: true,
 });
-
-export const db = getFirestore(app);
