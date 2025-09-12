@@ -9,7 +9,6 @@ export default function Navigation({ currentUser }) {
   const [open, setOpen] = useState(false);
   const menuRef = useRef(null);
 
-  // Normalize user fields
   const name = currentUser?.name || currentUser?.displayName || "";
   const email = currentUser?.email || "";
   const rolesNorm = Array.isArray(currentUser?.roles)
@@ -17,10 +16,9 @@ export default function Navigation({ currentUser }) {
     : currentUser?.role
     ? [String(currentUser.role).toLowerCase()]
     : [];
-  const rolePrimary = rolesNorm[0] || ""; // for the badge
+  const rolePrimary = rolesNorm[0] || "";
   const isAdmin = rolesNorm.includes("admin");
 
-  // Avatar fallback
   const photoURL = currentUser?.photoURL;
   const initials =
     (name || email)
@@ -30,20 +28,12 @@ export default function Navigation({ currentUser }) {
       .map((s) => s[0]?.toUpperCase())
       .join("") || "U";
 
-  // Close dropdown on outside click or on Escape
   useEffect(() => {
-    const onDocClick = (e) => {
+    const onClick = (e) => {
       if (menuRef.current && !menuRef.current.contains(e.target)) setOpen(false);
     };
-    const onKey = (e) => {
-      if (e.key === "Escape") setOpen(false);
-    };
-    document.addEventListener("mousedown", onDocClick);
-    document.addEventListener("keydown", onKey);
-    return () => {
-      document.removeEventListener("mousedown", onDocClick);
-      document.removeEventListener("keydown", onKey);
-    };
+    document.addEventListener("mousedown", onClick);
+    return () => document.removeEventListener("mousedown", onClick);
   }, []);
 
   const linkBase = "px-3 py-2 rounded-md text-sm font-medium";
@@ -51,9 +41,10 @@ export default function Navigation({ currentUser }) {
   const inactive = "text-gray-600 hover:text-gray-900 hover:bg-gray-100";
 
   return (
-    <header className="bg-white border-b border-gray-200">
-      <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
-        {/* Left: Logo + title + nav */}
+    <header className="bg-white border-b border-gray-200 w-full">
+      {/* Removed max-w-6xl and mx-auto so it's full width */}
+      <div className="px-6 py-4 flex items-center justify-between">
+        {/* Left */}
         <div className="flex items-center gap-6">
           <NavLink to="/dashboard" className="flex items-center gap-3">
             <img
@@ -102,7 +93,7 @@ export default function Navigation({ currentUser }) {
           </nav>
         </div>
 
-        {/* Right: Avatar + dropdown */}
+        {/* Right */}
         <div className="relative" ref={menuRef}>
           <button
             onClick={() => setOpen((o) => !o)}
@@ -129,7 +120,6 @@ export default function Navigation({ currentUser }) {
               role="menu"
               className="absolute right-0 mt-2 w-60 bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden z-50"
             >
-              {/* Role badge */}
               {rolePrimary && (
                 <div className="px-3 py-2 bg-gray-50 border-b border-gray-200">
                   <span className="px-2 py-0.5 rounded-full text-xs font-semibold text-purple-700 bg-purple-100">
@@ -138,20 +128,17 @@ export default function Navigation({ currentUser }) {
                 </div>
               )}
 
-              {/* Profile */}
               <button
                 onClick={() => {
                   setOpen(false);
                   navigate("/profile");
                 }}
                 className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100"
-                role="menuitem"
               >
                 Profile
                 <div className="text-xs text-gray-500 truncate">{email}</div>
               </button>
 
-              {/* Admin-only entries */}
               {isAdmin && (
                 <>
                   <div className="my-1 border-t border-gray-200" />
@@ -161,7 +148,6 @@ export default function Navigation({ currentUser }) {
                       navigate("/users");
                     }}
                     className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100"
-                    role="menuitem"
                   >
                     Manage Users
                   </button>
@@ -171,14 +157,12 @@ export default function Navigation({ currentUser }) {
                       navigate("/workspaces");
                     }}
                     className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100"
-                    role="menuitem"
                   >
                     Manage Workspaces
                   </button>
                 </>
               )}
 
-              {/* Sign out */}
               <div className="my-1 border-t border-gray-200" />
               <button
                 onClick={async () => {
@@ -187,7 +171,6 @@ export default function Navigation({ currentUser }) {
                   navigate("/login");
                 }}
                 className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50"
-                role="menuitem"
               >
                 Sign Out
               </button>
