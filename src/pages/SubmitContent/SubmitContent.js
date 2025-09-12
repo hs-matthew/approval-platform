@@ -162,56 +162,7 @@ const SubmitContent = ({ workspaces, onSubmit, currentUser }) => {
             <div className="flex items-center gap-4">
               <button
                 type="button"
-                onClick={() => {
-                  const url = prompt('Enter link URL:');
-                  if (url) handleEditorCommand('createLink', url);
-                }}
-                className="p-2 hover:bg-gray-100 rounded border border-transparent hover:border-gray-300"
-                title="Insert Link"
-              >
-                <Link2 className="w-4 h-4" />
-              </button>
-            </div>
-
-            {/* Editor Content Area */}
-            <div
-              ref={editorRef}
-              contentEditable
-              className="w-full min-h-64 px-3 py-2 border border-gray-300 border-t-0 rounded-b-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
-              style={{ minHeight: '200px' }}
-              onInput={handleContentChange}
-              suppressContentEditableWarning={true}
-            />
-            <div className="text-xs text-gray-500 mt-1">
-              Use the toolbar above to format your text.
-            </div>
-          </div>
-
-          <button
-            onClick={handleSubmitPost}
-            className="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 transition-colors"
-          >
-            Submit Blog Post
-          </button>
-        </div>
-      )}
-
-      {/* GBP Service Form */}
-      {submissionType === 'gbp_service' && (
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">GBP Service</h3>
-          <p className="text-gray-600">Google Business Profile service submission coming soon!</p>
-        </div>
-      )}
-    </div>
-  );
-};
-
-export default SubmitContent;
-                  if (fileInputRef.current) {
-                    fileInputRef.current.click();
-                  }
-                }}
+                onClick={() => fileInputRef.current?.click()}
                 className="bg-white border border-gray-300 rounded-md px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 flex items-center gap-2"
               >
                 <Image className="w-4 h-4" />
@@ -314,3 +265,48 @@ export default SubmitContent;
               <button
                 type="button"
                 onClick={() => {
+                  const url = prompt('Enter link URL:');
+                  if (url) handleEditorCommand('createLink', url);
+                }}
+                className="p-2 hover:bg-gray-100 rounded border border-transparent hover:border-gray-300"
+                title="Insert Link"
+              >
+                <Link2 className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Editor Content Area */}
+            <div
+              ref={editorRef}
+              contentEditable
+              className="w-full min-h-64 px-3 py-2 border border-gray-300 border-t-0 rounded-b-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+              style={{ minHeight: '200px' }}
+              onInput={handleContentChange}
+              suppressContentEditableWarning={true}
+            />
+            <div className="text-xs text-gray-500 mt-1">
+              Use the toolbar above to format your text.
+            </div>
+          </div>
+
+          <button
+            onClick={handleSubmitPost}
+            className="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 transition-colors"
+          >
+            Submit Blog Post
+          </button>
+        </div>
+      )}
+
+      {/* GBP Service Form */}
+      {submissionType === 'gbp_service' && (
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">GBP Service</h3>
+          <p className="text-gray-600">Google Business Profile service submission coming soon!</p>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default SubmitContent;
