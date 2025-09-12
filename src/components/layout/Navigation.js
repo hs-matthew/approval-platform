@@ -1,20 +1,58 @@
-// components/layout/Navigation.js
-import React from "react";
+// src/components/layout/Navigation.js
+import React, { useEffect, useRef, useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { signOut } from "firebase/auth";
 import { auth } from "../../lib/firebase";
 
 export default function Navigation({ currentUser }) {
   const navigate = useNavigate();
+  const [open, setOpen] = useState(false);
+  const menuRef = useRef(null);
 
-  const base =
-    "px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-200";
+  // Normalize user fields
+  const name = currentUser?.name || currentUser?.displayName || "";
+  const email = currentUser?.email || "";
+  const rolesNorm = Array.isArray(currentUser?.roles)
+    ? currentUser.roles.map((r) => String(r).toLowerCase())
+    : currentUser?.role
+    ? [String(currentUser.role).toLowerCase()]
+    : [];
+  const rolePrimary = rolesNorm[0] || ""; // for the badge
+  const isAdmin = rolesNorm.includes("admin");
+
+  // Avatar fallback
+  const photoURL = currentUser?.photoURL;
+  const initials =
+    (name || email)
+      .trim()
+      .split(/\s+/)
+      .slice(0, 2)
+      .map((s) => s[0]?.toUpperCase())
+      .join("") || "U";
+
+  // Close dropdown on outside click or on Escape
+  useEffect(() => {
+    const onDocClick = (e) => {
+      if (menuRef.current && !menuRef.current.contains(e.target)) setOpen(false);
+    };
+    const onKey = (e) => {
+      if (e.key === "Escape") setOpen(false);
+    };
+    document.addEventListener("mousedown", onDocClick);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onDocClick);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, []);
+
+  const linkBase = "px-3 py-2 rounded-md text-sm font-medium";
   const active = "bg-blue-100 text-blue-700";
-  const inactive = "text-gray-600 hover:text-gray-900";
+  const inactive = "text-gray-600 hover:text-gray-900 hover:bg-gray-100";
 
   return (
-    <div className="bg-white border-b border-gray-200 px-6 py-4">
-      <div className="flex items-center justify-between">
+    <header className="bg-white border-b border-gray-200">
+      <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
         {/* Left: Logo + title + nav */}
         <div className="flex items-center gap-6">
           <NavLink to="/dashboard" className="flex items-center gap-3">
@@ -28,73 +66,135 @@ export default function Navigation({ currentUser }) {
             </h1>
           </NavLink>
 
-          <nav className="flex gap-2">
+          <nav className="flex items-center gap-2 ml-2">
             <NavLink
               to="/dashboard"
               className={({ isActive }) =>
-                `${base} ${isActive ? active : inactive}`
+                `${linkBase} ${isActive ? active : inactive}`
               }
             >
               Dashboard
             </NavLink>
             <NavLink
-              to="/submit"
+              to="/content"
               className={({ isActive }) =>
-                `${base} ${isActive ? active : inactive}`
+                `${linkBase} ${isActive ? active : inactive}`
               }
             >
-              Submit Content
+              Content
             </NavLink>
             <NavLink
-              to="/workspaces"
+              to="/audits"
               className={({ isActive }) =>
-                `${base} ${isActive ? active : inactive}`
+                `${linkBase} ${isActive ? active : inactive}`
               }
             >
-              Manage Workspaces
+              Audits
             </NavLink>
             <NavLink
-              to="/users"
+              to="/seo-reports"
               className={({ isActive }) =>
-                `${base} ${isActive ? active : inactive}`
+                `${linkBase} ${isActive ? active : inactive}`
               }
             >
-              Manage Users
+              SEO Reports
             </NavLink>
           </nav>
         </div>
 
-        {/* Right: user info + signout */}
-        <div className="flex items-center gap-4">
-          {currentUser && currentUser.role && (
-            <div className="px-3 py-1 rounded-full text-xs font-medium text-purple-600 bg-purple-100">
-              {currentUser.role.charAt(0).toUpperCase() +
-                currentUser.role.slice(1)}
+        {/* Right: Avatar + dropdown */}
+        <div className="relative" ref={menuRef}>
+          <button
+            onClick={() => setOpen((o) => !o)}
+            aria-haspopup="menu"
+            aria-expanded={open}
+            className="flex items-center gap-2 focus:outline-none"
+            title={email}
+          >
+            {photoURL ? (
+              <img
+                src={photoURL}
+                alt={name || email}
+                className="h-9 w-9 rounded-full object-cover border border-gray-200"
+              />
+            ) : (
+              <div className="h-9 w-9 rounded-full bg-gray-200 text-gray-700 flex items-center justify-center font-semibold border border-gray-300">
+                {initials}
+              </div>
+            )}
+          </button>
+
+          {open && (
+            <div
+              role="menu"
+              className="absolute right-0 mt-2 w-60 bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden z-50"
+            >
+              {/* Role badge */}
+              {rolePrimary && (
+                <div className="px-3 py-2 bg-gray-50 border-b border-gray-200">
+                  <span className="px-2 py-0.5 rounded-full text-xs font-semibold text-purple-700 bg-purple-100">
+                    {rolePrimary.charAt(0).toUpperCase() + rolePrimary.slice(1)}
+                  </span>
+                </div>
+              )}
+
+              {/* Profile */}
+              <button
+                onClick={() => {
+                  setOpen(false);
+                  navigate("/profile");
+                }}
+                className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100"
+                role="menuitem"
+              >
+                Profile
+                <div className="text-xs text-gray-500 truncate">{email}</div>
+              </button>
+
+              {/* Admin-only entries */}
+              {isAdmin && (
+                <>
+                  <div className="my-1 border-t border-gray-200" />
+                  <button
+                    onClick={() => {
+                      setOpen(false);
+                      navigate("/users");
+                    }}
+                    className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100"
+                    role="menuitem"
+                  >
+                    Manage Users
+                  </button>
+                  <button
+                    onClick={() => {
+                      setOpen(false);
+                      navigate("/workspaces");
+                    }}
+                    className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100"
+                    role="menuitem"
+                  >
+                    Manage Workspaces
+                  </button>
+                </>
+              )}
+
+              {/* Sign out */}
+              <div className="my-1 border-t border-gray-200" />
+              <button
+                onClick={async () => {
+                  setOpen(false);
+                  await signOut(auth);
+                  navigate("/login");
+                }}
+                className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50"
+                role="menuitem"
+              >
+                Sign Out
+              </button>
             </div>
-          )}
-          {currentUser && (
-            <div className="text-sm text-gray-600">{currentUser.name}</div>
-          )}
-          {currentUser ? (
-            <button
-              onClick={async () => {
-                await signOut(auth);
-                navigate("/login");
-              }}
-              className="px-3 py-1 rounded-md bg-gray-100 hover:bg-gray-200 text-sm"
-            >
-              Sign Out
-            </button>
-          ) : (
-            <NavLink
-              to="/login"
-              className="px-3 py-1 rounded-md bg-blue-600 hover:bg-blue-700 text-white text-sm"
-            >
-              Sign In
-            </NavLink>
           )}
         </div>
       </div>
-    </div>
+    </header>
   );
 }
