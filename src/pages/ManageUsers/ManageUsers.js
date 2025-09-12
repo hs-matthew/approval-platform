@@ -1,7 +1,7 @@
 // pages/ManageUsers/ManageUsers.js
 import React from 'react';
 import { Users, Calendar, Mail, Shield } from 'lucide-react';
-import UserForm from '../../components/forms/UserForm'; // ✅ Import the new UserForm
+import UserForm from './UserForm'; // ✅ Import the new UserForm
 
 const ManageUsers = ({ users, currentUser, onAddUser }) => {
   const formatDate = (dateString) => {
