@@ -1,8 +1,8 @@
 // pages/SubmitContent/SubmitContent.js
 import React, { useState, useRef } from 'react';
 import { FileText, MapPin, Image, Bold, Italic, Underline, List, Link2, AlignLeft, AlignCenter, AlignRight, X } from 'lucide-react';
-  
-const SubmitContent = ({ workspaces, onSubmit, currentUser }) => {
+
+const SubmitContent = ({ workspaces = [], onSubmit = () => {}, currentUser = { role: 'admin', id: 1 } }) => {
   const [submissionType, setSubmissionType] = useState('blog_post');
   const [newPost, setNewPost] = useState({ 
     title: '', 
@@ -52,6 +52,15 @@ const SubmitContent = ({ workspaces, onSubmit, currentUser }) => {
       return;
     }
 
+    // Check if we have a real onSubmit function
+    if (!onSubmit || onSubmit.toString() === '() => {}') {
+      console.warn('No onSubmit function provided - form submission disabled');
+      alert('Form submission not configured. Please connect to your App.js onSubmit handler.');
+      return;
+    }
+
+    console.log('Submitting post with data:', newPost); // Debug log
+
     const submission = {
       type: 'blog_post',
       title: newPost.title,
@@ -64,11 +73,18 @@ const SubmitContent = ({ workspaces, onSubmit, currentUser }) => {
     };
 
     try {
-      await onSubmit(submission);
-      setNewPost({ title: '', content: '', workspaceId: '', image: null });
-      // Clear editor content
-      if (editorRef.current) {
-        editorRef.current.innerHTML = '';
+      console.log('Calling onSubmit with:', submission); // Debug log
+      const result = await onSubmit(submission);
+      console.log('Submission result:', result); // Debug log
+      
+      // Only clear form if submission was successful
+      if (result !== false) {
+        setNewPost({ title: '', content: '', workspaceId: '', image: null });
+        // Clear editor content
+        if (editorRef.current) {
+          editorRef.current.innerHTML = '';
+        }
+        alert('Content submitted successfully!');
       }
     } catch (error) {
       console.error('Error submitting post:', error);
@@ -78,8 +94,13 @@ const SubmitContent = ({ workspaces, onSubmit, currentUser }) => {
 
   const accessibleWorkspaces = getAccessibleWorkspaces();
 
+  console.log('About to render, accessibleWorkspaces:', accessibleWorkspaces);
+
   return (
     <div className="max-w-4xl mx-auto p-6">
+      <div style={{ background: 'red', color: 'white', padding: '10px' }}>
+        DEBUG: SubmitContent is rendering - workspaces: {workspaces.length}, user: {currentUser.role}
+      </div>
       <div className="mb-6">
         <h2 className="text-2xl font-bold text-gray-900">Submit New Content</h2>
         <p className="text-gray-600">Choose the type of content you want to submit for approval</p>
