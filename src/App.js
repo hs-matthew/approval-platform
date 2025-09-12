@@ -124,13 +124,12 @@ const ApprovalPlatform = () => {
           />
         );
 
-        // Add this RIGHT BEFORE your renderCurrentView function in App.js:
-
-console.log('🔍 App.js Debug:');
-console.log('- users array:', users);
-console.log('- users length:', users?.length);
-console.log('- users loading:', usersLoading); // if you have this variable
-console.log('- current view:', currentView);
+// In App.js, add this right before your renderCurrentView():
+console.log('🔍 USERS ARRAY DETAILS:');
+console.log('- users variable:', users);
+console.log('- users type:', typeof users);
+console.log('- users is array:', Array.isArray(users));
+console.log('- users actual data:', JSON.stringify(users, null, 2));
         
       case 'users':
         return (
