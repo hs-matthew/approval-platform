@@ -2,8 +2,7 @@
 import React, { useState, useRef } from 'react';
 import { FileText, MapPin, Image, Bold, Italic, Underline, List, Link2, AlignLeft, AlignCenter, AlignRight, X } from 'lucide-react';
   
-const SubmitContent = ({ workspaces, onSubmit, currentUser }) => {
-    console.log('SubmitContent props:', { workspaces, onSubmit, currentUser });
+const SubmitContent = ({ workspaces = [], onSubmit = () => {}, currentUser = { role: 'admin' } }) => {
   const [submissionType, setSubmissionType] = useState('blog_post');
   const [newPost, setNewPost] = useState({ 
     title: '', 
