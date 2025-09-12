@@ -9,7 +9,7 @@ import Dashboard from "./pages/Dashboard/Dashboard";
 import SubmitContent from "./pages/SubmitContent/SubmitContent";
 import ManageWorkspaces from "./pages/ManageWorkspaces/ManageWorkspaces";
 import ManageUsers from "./pages/ManageUsers/ManageUsers";
-import ReviewSubmission from "./pages/ReviewSubmission/ReviewSubmission";
+import ReviewRoute from "./pages/ReviewSubmission/ReviewRoute";
 
 import RequireAuth from "./components/auth/RequireAuth";
 import { useAuth } from "./hooks/useAuth";
@@ -24,10 +24,8 @@ function ApprovalPlatform() {
   const navigate = useNavigate();
   const { currentUser } = useAuth();
 
-  // Keep your existing state & hooks
-  const [selectedSubmission, setSelectedSubmission] = useState(null);
+  // Your existing state & hooks
   const [feedback, setFeedback] = useState("");
-
   const { data: users, addItem: addUser, loading: usersLoading } = useFirestore("users");
   const { data: workspaces, addItem: addWorkspace, loading: workspacesLoading } = useFirestore("workspaces");
   const {
@@ -43,47 +41,46 @@ function ApprovalPlatform() {
 
   const isLoading = usersLoading || workspacesLoading || submissionsLoading;
 
-  // Wire nav buttons to routes
-  const onViewChange = (view) => {
-    if (view === "dashboard") navigate("/dashboard");
-    if (view === "submit") navigate("/submit");
-    if (view === "workspaces") navigate("/workspaces");
-    if (view === "users") navigate("/users");
-  };
+  // Navigations previously handled by onViewChange
+  const toDashboard = () => navigate("/dashboard");
+  const toSubmit = () => navigate("/submit");
+  const toWorkspaces = () => navigate("/workspaces");
+  const toUsers = () => navigate("/users");
 
-  const handleSelectSubmission = (submission) => {
-    setSelectedSubmission(submission);
+  // Dashboard -> Review button
+  const onSelectSubmission = (submission) => {
     navigate(`/review/${submission.id}`);
   };
 
-  const handleApprove = (id) => {
+  const onApprove = (id) => {
     updateSubmission(id, { status: "approved", feedback, approvedAt: new Date().toISOString() });
     setFeedback("");
-    navigate("/dashboard");
+    toDashboard();
   };
 
-  const handleReject = (id) => {
+  const onReject = (id) => {
     if (!feedback.trim()) {
       alert("Please provide feedback when rejecting a submission.");
       return;
     }
     updateSubmission(id, { status: "rejected", feedback, rejectedAt: new Date().toISOString() });
     setFeedback("");
-    navigate("/dashboard");
+    toDashboard();
   };
 
   return (
     <div className="min-h-screen bg-gray-100">
-      {/* Public route renders without nav; protected routes show nav */}
       <Routes>
+        {/* Public */}
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
         <Route path="/login" element={<Login />} />
 
+        {/* Protected shell: shows Navigation + protected routes */}
         <Route
           element={
             <RequireAuth>
               <>
-                <Navigation currentUser={currentUser} onViewChange={onViewChange} />
+                <Navigation currentUser={currentUser} />
               </>
             </RequireAuth>
           }
@@ -103,40 +100,39 @@ function ApprovalPlatform() {
                   setFilterWorkspace={setFilterWorkspace}
                   filterType={filterType}
                   setFilterType={setFilterType}
-                  onSelectSubmission={handleSelectSubmission}
+                  onSelectSubmission={onSelectSubmission}
                 />
               )
             }
           />
+
           <Route
             path="/submit"
-            element={
-              <SubmitContent workspaces={workspaces} currentUser={currentUser} onSubmit={addSubmission} />
-            }
+            element={<SubmitContent workspaces={workspaces} currentUser={currentUser} onSubmit={addSubmission} />}
           />
+
           <Route
             path="/workspaces"
-            element={
-              <ManageWorkspaces workspaces={workspaces} currentUser={currentUser} onAddWorkspace={addWorkspace} />
-            }
+            element={<ManageWorkspaces workspaces={workspaces} currentUser={currentUser} onAddWorkspace={addWorkspace} />}
           />
+
           <Route
             path="/users"
             element={<ManageUsers users={users} currentUser={currentUser} onAddUser={addUser} />}
           />
+
+          {/* NEW: review by id, data loaded inside ReviewRoute */}
           <Route
             path="/review/:id"
             element={
-              <ReviewSubmission
-                submission={selectedSubmission}
-                workspace={workspaces.find((w) => w.id === selectedSubmission?.workspaceId)}
-                author={users.find((u) => u.id === selectedSubmission?.authorId)}
+              <ReviewRoute
+                users={users}
+                workspaces={workspaces}
                 currentUser={currentUser}
+                onApprove={onApprove}
+                onReject={onReject}
                 feedback={feedback}
                 onFeedbackChange={setFeedback}
-                onApprove={handleApprove}
-                onReject={handleReject}
-                onBack={() => navigate("/dashboard")}
               />
             }
           />
@@ -145,7 +141,6 @@ function ApprovalPlatform() {
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>
 
-      {/* Show footer everywhere except pure-login if you prefer */}
       <Footer />
     </div>
   );
