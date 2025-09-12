@@ -1,26 +1,20 @@
 // src/App.js
 import React, { useState } from "react";
-import {
-  Routes,
-  Route,
-  Navigate,
-  useNavigate,
-} from "react-router-dom";
+import { Routes, Route, Navigate, useNavigate } from "react-router-dom";
 
-import Dashboard from "./pages/Dashboard/Dashboard";
+import Login from "./pages/Auth/Login";
+import Dashboard from "./pages/Dashboard/Dashboard";     // placeholder now
+import ContentPage from "./pages/Content/Content";        // NEW file (moved from Dashboard)
 import SubmitContent from "./pages/SubmitContent/SubmitContent";
 import ManageWorkspaces from "./pages/ManageWorkspaces/ManageWorkspaces";
 import ManageUsers from "./pages/ManageUsers/ManageUsers";
-import ReviewSubmission from "./pages/ReviewSubmission/ReviewSubmission";
-import Login from "./pages/Auth/Login";
+import ReviewRoute from "./pages/ReviewSubmission/ReviewRoute";
 
+import ProtectedLayout from "./components/layout/ProtectedLayout";
 import { useAuth } from "./hooks/useAuth";
 import { useFirestore } from "./hooks/useFirestore";
 import { useSubmissions } from "./hooks/useSubmissions";
 
-import ProtectedLayout from "./components/layout/ProtectedLayout";
-
-// Simple loading spinner while waiting on data
 const Loading = () => (
   <div className="max-w-4xl mx-auto p-6">
     <div className="text-center py-12">
@@ -31,7 +25,6 @@ const Loading = () => (
   </div>
 );
 
-// Auth gate for protected routes
 const RequireAuth = ({ children }) => {
   const { currentUser, loading } = useAuth();
   if (loading) return <Loading />;
@@ -39,68 +32,13 @@ const RequireAuth = ({ children }) => {
   return children;
 };
 
-// Review route wrapper – loads submission by ID from Firestore
-const ReviewRoute = ({
-  users,
-  workspaces,
-  currentUser,
-  onApprove,
-  onReject,
-  feedback,
-  onFeedbackChange,
-}) => {
-  const { submissions } = useSubmissions(workspaces);
-  const navigate = useNavigate();
-  const { id } = useParams();
-  const submission = submissions.find((s) => s.id === id);
-
-  if (!submission) {
-    return (
-      <div className="max-w-4xl mx-auto p-6">
-        <h2 className="text-xl font-semibold mb-4">Submission not found</h2>
-        <button
-          onClick={() => navigate("/dashboard")}
-          className="px-4 py-2 bg-blue-600 text-white rounded-md"
-        >
-          Back to Dashboard
-        </button>
-      </div>
-    );
-  }
-
-  const workspace = workspaces.find((w) => w.id === submission.workspaceId);
-  const author = users.find((u) => u.id === submission.authorId);
-
-  return (
-    <ReviewSubmission
-      submission={submission}
-      workspace={workspace}
-      author={author}
-      currentUser={currentUser}
-      feedback={feedback}
-      onFeedbackChange={onFeedbackChange}
-      onApprove={onApprove}
-      onReject={onReject}
-      onBack={() => navigate("/dashboard")}
-    />
-  );
-};
-
 export default function App() {
+  const navigate = useNavigate();
   const { currentUser } = useAuth();
   const [feedback, setFeedback] = useState("");
 
-  // Firestore hooks
-  const {
-    data: users,
-    addItem: addUser,
-    loading: usersLoading,
-  } = useFirestore("users");
-  const {
-    data: workspaces,
-    addItem: addWorkspace,
-    loading: workspacesLoading,
-  } = useFirestore("workspaces");
+  const { data: users, addItem: addUser, loading: usersLoading } = useFirestore("users");
+  const { data: workspaces, addItem: addWorkspace, loading: workspacesLoading } = useFirestore("workspaces");
   const {
     submissions,
     addSubmission,
@@ -115,12 +53,9 @@ export default function App() {
   const isLoading = usersLoading || workspacesLoading || submissionsLoading;
 
   const onApprove = (id) => {
-    updateSubmission(id, {
-      status: "approved",
-      feedback,
-      approvedAt: new Date().toISOString(),
-    });
+    updateSubmission(id, { status: "approved", feedback, approvedAt: new Date().toISOString() });
     setFeedback("");
+    navigate("/content");
   };
 
   const onReject = (id) => {
@@ -128,21 +63,19 @@ export default function App() {
       alert("Please provide feedback when rejecting a submission.");
       return;
     }
-    updateSubmission(id, {
-      status: "rejected",
-      feedback,
-      rejectedAt: new Date().toISOString(),
-    });
+    updateSubmission(id, { status: "rejected", feedback, rejectedAt: new Date().toISOString() });
     setFeedback("");
+    navigate("/content");
   };
+
+  const onSelectSubmission = (submission) => navigate(`/review/${submission.id}`);
 
   return (
     <Routes>
-      {/* Public */}
-      <Route path="/" element={<Navigate to="/dashboard" replace />} />
+      {/* Default to Content */}
+      <Route path="/" element={<Navigate to="/content" replace />} />
       <Route path="/login" element={<Login />} />
 
-      {/* Protected Layout with nav + outlet */}
       <Route
         element={
           <RequireAuth>
@@ -150,64 +83,44 @@ export default function App() {
           </RequireAuth>
         }
       >
+        {/* Placeholder dashboard */}
+        <Route path="/dashboard" element={<Dashboard />} />
+
+        {/* CONTENT list (migrated from Dashboard) */}
         <Route
-          path="/dashboard"
+          path="/content"
           element={
             isLoading ? (
               <Loading />
             ) : (
-              <Dashboard
+              <ContentPage
                 submissions={submissions}
                 workspaces={workspaces}
                 users={users}
-                currentUser={currentUser}
                 filterWorkspace={filterWorkspace}
                 setFilterWorkspace={setFilterWorkspace}
                 filterType={filterType}
                 setFilterType={setFilterType}
-                onSelectSubmission={() => {}}
+                onSelectSubmission={onSelectSubmission}
               />
             )
           }
         />
+
+        {/* Submit Content (your existing page) */}
         <Route
-          path="/content"
-          element={
-            <SubmitContent
-              workspaces={workspaces}
-              currentUser={currentUser}
-              onSubmit={addSubmission}
-            />
-          }
+          path="/content/submit"
+          element={<SubmitContent workspaces={workspaces} currentUser={currentUser} onSubmit={addSubmission} />}
         />
-        <Route
-          path="/audits"
-          element={<div className="p-6">Audits (placeholder)</div>}
-        />
-        <Route
-          path="/seo-reports"
-          element={<div className="p-6">SEO Reports (placeholder)</div>}
-        />
-        <Route
-          path="/users"
-          element={
-            <ManageUsers
-              users={users}
-              currentUser={currentUser}
-              onAddUser={addUser}
-            />
-          }
-        />
+
+        {/* Admin */}
+        <Route path="/users" element={<ManageUsers users={users} currentUser={currentUser} onAddUser={addUser} />} />
         <Route
           path="/workspaces"
-          element={
-            <ManageWorkspaces
-              workspaces={workspaces}
-              currentUser={currentUser}
-              onAddWorkspace={addWorkspace}
-            />
-          }
+          element={<ManageWorkspaces workspaces={workspaces} currentUser={currentUser} onAddWorkspace={addWorkspace} />}
         />
+
+        {/* Review by ID */}
         <Route
           path="/review/:id"
           element={
@@ -222,9 +135,13 @@ export default function App() {
             />
           }
         />
+
+        {/* Other placeholders */}
+        <Route path="/audits" element={<div className="max-w-6xl mx-auto p-6">Audits (placeholder)</div>} />
+        <Route path="/seo-reports" element={<div className="max-w-6xl mx-auto p-6">SEO Reports (placeholder)</div>} />
       </Route>
 
-      <Route path="*" element={<Navigate to="/dashboard" replace />} />
+      <Route path="*" element={<Navigate to="/content" replace />} />
     </Routes>
   );
 }
