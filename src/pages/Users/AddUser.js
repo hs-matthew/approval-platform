@@ -3,7 +3,7 @@ import React from "react";
 import { useNavigate } from "react-router-dom";
 import { useFirestore } from "../../hooks/useFirestore";
 import UserForm from "./UserForm";
-import { addUserWithInvite } from "./usersActions";
+import { sendInviteOnly } from "./usersActions";
 
 export default function AddUser() {
   const navigate = useNavigate();
@@ -16,7 +16,7 @@ export default function AddUser() {
   async function handleAddUser(userData) {
     setSubmitError("");
     try {
-      await addUserWithInvite(userData); // writes users + invites (auto-ID, no memberships)
+      await sendInviteOnly(userData); // invite-only; no users writes
       navigate("/invites");
     } catch (e) {
       console.error(e);
