@@ -4,24 +4,6 @@ import { Link, useNavigate } from "react-router-dom";
 import { CalendarDays, CheckCircle2, AlertCircle, Upload, ArrowRight } from "lucide-react";
 import { useAuth } from "../../hooks/useAuth";
 
-import { useWorkspace } from "../../context/WorkspaceContext";
-
-export default function ReportsList() {
-  const { activeWorkspaceId, activeWorkspace } = useWorkspace();
-
-  // Example: filter by active workspace
-  const filteredReports = allReports.filter(
-    (r) => activeWorkspaceId === "all" || r.workspaceId === activeWorkspaceId
-  );
-
-  return (
-    <div>
-      <h1>{activeWorkspace?.name || "All Workspaces"} Reports</h1>
-      {/* render filteredReports */}
-    </div>
-  );
-}
-
 // Export for detail header reuse
 export const mockAuditsIndex = [
   { id: "2025-11-tech", title: "November 2025 Technical SEO Audit", createdAt: "2025-11-19", status: "in_progress",
@@ -41,7 +23,7 @@ const statusPill = (status) =>
     </span>
   );
 
-export function AuditsList() {
+export default function AuditsList() {
   const navigate = useNavigate();
   const { currentUser } = useAuth();
   const [showImport, setShowImport] = useState(false);
