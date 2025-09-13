@@ -64,7 +64,7 @@ export default function AuditsList() {
   {/* Right: Active Audits + Import CSV */}
   <div className="flex items-center gap-6">
     {/* Active Audits Stat Card */}
-    <div className="bg-white border border-gray-200 rounded-lg shadow-sm px-6 py-4 text-center">
+    <div className="bg-white border border-gray-200 rounded-lg shadow-sm px-4 py-2 text-center">
       <div className="text-sm font-medium text-gray-600">Active Audits</div>
       <div className="text-2xl font-bold text-blue-600">{activeCount}</div>
     </div>
