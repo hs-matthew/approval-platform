@@ -82,74 +82,71 @@ return (
       </div>
     </div>
 
-      {/* Cards */}
-      <div className="space-y-5">
-        {mockAuditsIndex.map((audit) => {
-          const { total, completed, highPriority } = audit.totals;
-          const progressPct = total > 0 ? Math.round((completed / total) * 100) : 0;
+{/* Cards */}
+<div className="space-y-5">
+  {mockAuditsIndex.map((audit) => {
+    const { total, completed, highPriority } = audit.totals;
+    const progressPct = total > 0 ? Math.round((completed / total) * 100) : 0;
 
-          return (
-            <div key={audit.id} className="bg-white rounded-xl border border-gray-200 shadow-sm">
-              <div className="p-5 flex flex-col h-full">
-                {/* Title row */}
-                <div className="flex items-center justify-between">
-                  <div className="text-lg font-semibold text-gray-900">{audit.title}</div>
-                  {statusPill(audit.status)}
-                </div>
-                <div className="mt-1 flex items-center gap-2 text-sm text-gray-500">
-                  <CalendarDays className="w-4 h-4" />
-                  Created on{" "}
-                  {new Date(audit.createdAt).toLocaleDateString(undefined, {
-                    month: "short",
-                    day: "2-digit",
-                    year: "numeric",
-                  })}
-                </div>
+    return (
+      <div key={audit.id} className="bg-white rounded-xl border border-gray-200 shadow-sm">
+        {/* Inner container MUST be a single element */}
+        <div className="p-5 flex flex-col h-full">
+          {/* === BODY === */}
+          <div>
+            {/* Title row */}
+            <div className="flex items-center justify-between">
+              <div className="text-lg font-semibold text-gray-900">{audit.title}</div>
+              {/* status pill here if you like */}
+            </div>
 
-                {/* Metrics stripes */}
-                <div className="mt-4 space-y-3">
-                  <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
-                    <div className="text-2xl font-bold text-gray-900">{total}</div>
-                    <div className="text-xs text-gray-500">Total Issues</div>
-                  </div>
+            {/* Created date */}
+            <div className="mt-1 text-sm text-gray-500">
+              Created on {new Date(audit.createdAt).toLocaleDateString(undefined, { month: "short", day: "2-digit", year: "numeric" })}
+            </div>
 
-                  <div className="rounded-lg border border-green-200 bg-green-50 px-4 py-3">
-                    <div className="text-2xl font-bold text-green-600">{completed}</div>
-                    <div className="text-xs text-green-700">Completed</div>
-                  </div>
+            {/* Metric tiles (example) */}
+            <div className="mt-4 grid grid-cols-3 gap-4">
+              <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-center">
+                <div className="text-2xl font-bold text-gray-900">{total}</div>
+                <div className="text-xs text-gray-500">Total Issues</div>
+              </div>
+              <div className="rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-center">
+                <div className="text-2xl font-bold text-green-600">{completed}</div>
+                <div className="text-xs text-green-700">Completed</div>
+              </div>
+              <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-center">
+                <div className="text-2xl font-bold text-red-600">{highPriority}</div>
+                <div className="text-xs text-red-700">High Priority</div>
+              </div>
+            </div>
 
-                  <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3">
-                    <div className="text-2xl font-bold text-red-600 flex items-center gap-1">
-                      {highPriority} <AlertCircle className="w-5 h-5" />
-                    </div>
-                    <div className="text-xs text-red-700">High Priority</div>
-                  </div>
-                </div>
+            {/* Progress */}
+            <div className="mt-4">
+              <div className="text-xs text-gray-500 mb-1">Progress</div>
+              <div className="w-full bg-gray-200 rounded-full h-2">
+                <div
+                  className={`h-2 rounded-full ${progressPct === 100 ? "bg-green-600" : "bg-green-500"}`}
+                  style={{ width: `${progressPct}%` }}
+                />
+              </div>
+            </div>
+          </div>
 
-      {/* Progress */}
-      <div className="mt-4">
-        <div className="text-xs text-gray-500 mb-1">Progress</div>
-        <div className="w-full bg-gray-200 rounded-full h-2">
-          <div
-            className={`h-2 rounded-full ${progressPct === 100 ? "bg-green-600" : "bg-green-500"}`}
-            style={{ width: `${progressPct}%` }}
-          />
+          {/* === FOOTER (pinned) === */}
+          <div className="mt-6 flex justify-end">
+            <Link
+              to={`/audits/${audit.id}`}
+              className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 font-medium text-sm"
+            >
+              View Details
+              <ArrowRight className="w-4 h-4" />
+            </Link>
+          </div>
         </div>
       </div>
-    </div>
-
-    {/* Footer (pinned to bottom-right) */}
-    <div className="mt-6 flex justify-end">
-      <Link
-        to={`/audits/${audit.id}`}
-        className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 font-medium text-sm"
-        aria-label={`View details for ${audit.title || audit.id}`}
-      >
-        View Details
-        <ArrowRight className="w-4 h-4" />
-      </Link>
-    </div>
-  </div>
+    );
+  })}
 </div>
 
       {/* Admin-only Import Modal */}
