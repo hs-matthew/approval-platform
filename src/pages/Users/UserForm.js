@@ -238,6 +238,15 @@ const normalize = (vals) => {
     if (initialValues) setFormData(normalize(initialValues));
   }, [initialValues]);
 
+   // Remove Later
+React.useEffect(() => {
+  if (initialValues) {
+    const n = normalize(initialValues);
+    // console.log("Normalized initialValues →", n); // <-- uncomment to inspect
+    setFormData(n);
+  }
+}, [initialValues]);
+
   // quiet lints; list is passed in
   useMemo(() => workspaces, [workspaces]);
 
