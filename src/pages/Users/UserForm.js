@@ -191,26 +191,29 @@ const UserForm = ({
    allowEmailEdit = false
 }) => {
 
-   // Helper to safely shape form data (used for both create and edit)
+// Helper to safely shape form data (used for both create and edit)
 const normalize = (vals) => {
   let workspaceIds = [];
   if (Array.isArray(vals?.workspaceIds)) {
     workspaceIds = vals.workspaceIds;
   } else if (vals?.memberships && typeof vals.memberships === "object") {
-    // Accept ANY truthy membership value:
+    // Accept common shapes:
     //  - boolean true
     //  - string role ("collaborator", etc.)
     //  - object with assigned !== false
     workspaceIds = Object.entries(vals.memberships)
       .filter(([_, v]) => {
         if (v == null) return false;
-        if (typeof v === "boolean") return v;                 // true
-        if (typeof v === "string") return v.trim().length > 0; // "collaborator"
-        if (typeof v === "object") return v.assigned !== false; // { assigned: true } or missing assigned
+        if (typeof v === "boolean") return v;
+        if (typeof v === "string") return v.trim().length > 0;
+        if (typeof v === "object") return v.assigned !== false;
         return false;
       })
       .map(([k]) => k);
   }
+
+  // Force to strings to avoid identity issues
+  workspaceIds = (workspaceIds || []).map(String);
 
   return {
     name: vals?.name ?? "",
@@ -238,14 +241,34 @@ const normalize = (vals) => {
     if (initialValues) setFormData(normalize(initialValues));
   }, [initialValues]);
 
-   // Remove Later
+// If we still have no chips after initialValues load, derive workspaceIds directly from memberships
 React.useEffect(() => {
-  if (initialValues) {
-    const n = normalize(initialValues);
-    // console.log("Normalized initialValues →", n); // <-- uncomment to inspect
-    setFormData(n);
+  if (!isEdit || !initialValues) return;
+  const hasChips = Array.isArray(formData.workspaceIds) && formData.workspaceIds.length > 0;
+  if (hasChips) return;
+
+  // derive again, but only for workspaceIds
+  let derived = [];
+  const m = initialValues.memberships;
+  if (m && typeof m === "object") {
+    derived = Object.entries(m)
+      .filter(([_, v]) => {
+        if (v == null) return false;
+        if (typeof v === "boolean") return v;
+        if (typeof v === "string") return v.trim().length > 0;
+        if (typeof v === "object") return v.assigned !== false;
+        return false;
+      })
+      .map(([k]) => String(k));
+  } else if (Array.isArray(initialValues.workspaceIds)) {
+    derived = initialValues.workspaceIds.map(String);
   }
-}, [initialValues]);
+
+  if (derived.length > 0) {
+    setFormData((prev) => ({ ...prev, workspaceIds: derived }));
+  }
+}, [isEdit, initialValues, formData.workspaceIds]);
+
 
   // quiet lints; list is passed in
   useMemo(() => workspaces, [workspaces]);
@@ -361,6 +384,10 @@ for (const id of selectedSet) {
     prev && typeof prev === "object" ? { ...prev, assigned: prev.assigned !== false } : { assigned: true };
 }
 
+const nextMemberships = Object.fromEntries(
+  (formData.workspaceIds || []).map((id) => [String(id), { assigned: true }])
+);
+       
 // --- Final payload ---
 const payload = {
   ...(initialValues || {}),                  // keep existing fields like id, createdAt, createdBy, etc.
@@ -497,7 +524,10 @@ const payload = {
           </div>
           {validationErrors.role && <p className="mt-1 text-sm text-red-600">{validationErrors.role}</p>}
         </div>
-
+{/* DEBUG */}
+{/* <pre className="text-xs text-gray-500 mb-2">
+  chips: {JSON.stringify(formData.workspaceIds)}
+</pre> */}
         {/* Workspaces (searchable multi-select with chips) */}
         <div>
           <WorkspaceMultiSelect
