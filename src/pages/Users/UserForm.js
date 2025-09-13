@@ -348,72 +348,64 @@ if (!email) {
     return Object.keys(e).length === 0;
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!validate()) return;
-    setIsSubmitting(true);
-    try {
-      // Build a base from current form fields
-      const base = {
-        name: formData.name.trim(),
-        email: formData.email.trim().toLowerCase(),
-        role: formData.role,
-        workspaceIds: formData.workspaceIds,
-        collaboratorPerms: formData.role === "collaborator" ? formData.collaboratorPerms : null,
-      };
-// 👇 Prevent email changes in edit mode unless explicitly allowed
-if (isEdit && !allowEmailEdit) {
-  base.email = (initialValues?.email || "").toLowerCase();
-}
-// Preserve existing record fields if editing; set createdAt only on create; always set updatedAt
-// --- Build memberships from selected workspaceIds (merge-friendly) ---
-const existing = (initialValues?.memberships && typeof initialValues.memberships === "object")
-  ? { ...initialValues.memberships }
-  : {};
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  if (!validate()) return;
+  setIsSubmitting(true);
+  try {
+    // Build a base from current form fields
+    const base = {
+      name: formData.name.trim(),
+      email: formData.email.trim().toLowerCase(),
+      role: formData.role,
+      workspaceIds: formData.workspaceIds,
+      collaboratorPerms:
+        formData.role === "collaborator" ? formData.collaboratorPerms : null,
+    };
 
-// Start from existing, then:
-// 1) ensure all selected ids are present (preserve existing object if present, else { assigned: true })
-// 2) drop any ids that are no longer selected
-const selectedSet = new Set(formData.workspaceIds || []);
-//const nextMemberships = {};
-
-// --- Build memberships from selected workspaceIds (overwrite, simple & consistent) ---
-const nextMemberships = Object.fromEntries(
-  (formData.workspaceIds || []).map((id) => [String(id), { assigned: true }])
-);
-
-// --- Final payload ---
-const payload = {
-  ...(initialValues || {}),                  // keep existing fields like id, createdAt, createdBy, etc.
-  ...base,                                   // override with latest form values (name, email, role, workspaceIds, perms)
-  memberships: nextMemberships,              // 👈 normalized memberships shape
-  createdAt: initialValues?.createdAt ?? new Date().toISOString(),
-  updatedAt: new Date().toISOString(),
-  isActive: initialValues?.isActive ?? true,
-  lastLogin: initialValues?.lastLogin ?? null,
-  createdBy: initialValues?.createdBy ?? "system",
-  id: initialValues?.id ?? undefined,
-};
-
-      await onAddUser(payload); // or onUpdateUser(payload) if you split handlers
-
-      if (isEdit) {
-        setValidationErrors({});
-        setShowSuccess(true);
-        setTimeout(() => setShowSuccess(false), 2500);
-      } else {
-        setFormData(normalize(null));
-        setValidationErrors({});
-        setShowSuccess(true);
-        setTimeout(() => setShowSuccess(false), 3000);
-      }
-    } catch (err) {
-      console.error(err);
-      setValidationErrors({ submit: "Failed to save user. Please try again." });
-    } finally {
-      setIsSubmitting(false);
+    // Prevent email changes in edit mode unless explicitly allowed
+    if (isEdit && !allowEmailEdit) {
+      base.email = (initialValues?.email || "").toLowerCase();
     }
-  };
+
+    // --- Build memberships from selected workspaceIds (single declaration) ---
+    const nextMemberships = Object.fromEntries(
+      (formData.workspaceIds || []).map((id) => [String(id), { assigned: true }])
+    );
+
+    // --- Final payload ---
+    const payload = {
+      ...(initialValues || {}),           // keep existing fields like id, createdAt, createdBy, etc.
+      ...base,                            // override with latest form values
+      memberships: nextMemberships,       // normalized memberships shape
+      createdAt: initialValues?.createdAt ?? new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      isActive: initialValues?.isActive ?? true,
+      lastLogin: initialValues?.lastLogin ?? null,
+      createdBy: initialValues?.createdBy ?? "system",
+      id: initialValues?.id ?? undefined, // include id if present
+    };
+
+    await onAddUser(payload); // or onUpdateUser(payload) if you split handlers
+
+    if (isEdit) {
+      setValidationErrors({});
+      setShowSuccess(true);
+      setTimeout(() => setShowSuccess(false), 2500);
+    } else {
+      // Reset after create
+      setFormData(normalize(null));
+      setValidationErrors({});
+      setShowSuccess(true);
+      setTimeout(() => setShowSuccess(false), 3000);
+    }
+  } catch (err) {
+    console.error(err);
+    setValidationErrors({ submit: "Failed to save user. Please try again." });
+  } finally {
+    setIsSubmitting(false);
+  }
+};
 
   return (
     <div className={`bg-white rounded-lg shadow-sm border border-gray-200 p-6 ${className}`}>
