@@ -58,21 +58,20 @@ export default function ReportsList() {
 
   return (
     <div className="max-w-6xl mx-auto p-6">
-      {/* Header */}
-      <div className="flex items-start justify-between mb-5">
-        <div>
-          <h1 className="text-3xl font-extrabold text-gray-900">
-            Monthly SEO Reports
-          </h1>
-          <p className="text-gray-600">
-            View detailed reports of completed SEO work by month
-          </p>
-        </div>
-        <div className="text-right">
-          <div className="text-sm text-gray-500">Available Reports</div>
-          <div className="text-3xl font-bold text-blue-600">{totalAvailable}</div>
-        </div>
-      </div>
+{/* Header */}
+<div className="flex items-center justify-between mb-6">
+  {/* Left: Title + description */}
+  <div>
+    <h1 className="text-3xl font-extrabold text-gray-900">Monthly SEO Reports</h1>
+    <p className="text-gray-600">View detailed reports of completed SEO work by month</p>
+  </div>
+
+  {/* Right: Available Reports stat card (same style as Audits) */}
+  <div className="bg-white border border-gray-200 rounded-md shadow-sm px-4 py-2 text-center">
+    <div className="text-xs font-medium text-gray-600">Available Reports</div>
+    <div className="text-lg font-bold text-blue-600">{totalAvailable}</div>
+  </div>
+</div>
 
       {/* Cards */}
       <div className="space-y-5">
