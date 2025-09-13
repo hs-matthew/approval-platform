@@ -146,13 +146,20 @@ export default function Navigation({ currentUser }) {
               {/* Shared actions */}
               <div className="my-2 border-t border-gray-200" />
 
-              <button
-                onClick={() => { setOpen(false); navigate("/profile"); }}
-                className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100"
-              >
-                Profile
-                <div className="text-xs text-gray-500 truncate">{email}</div>
-              </button>
+              <div className="flex items-center justify-between px-4 py-2 hover:bg-gray-100">
+  <div className="flex flex-col items-start">
+    <span className="text-sm font-medium text-gray-900">
+      {name || email}
+    </span>
+    <span className="text-xs text-gray-500 truncate">{email}</span>
+  </div>
+  <button
+    onClick={() => { setOpen(false); navigate("/user-profile"); }}
+    className="text-xs text-blue-600 hover:underline ml-2"
+  >
+    Edit Profile
+  </button>
+</div>
 
               {/* Desktop-only admin items (mobile also shows them here) */}
               {isAdmin && (
