@@ -1,41 +1,68 @@
-import { addDoc, collection, doc, serverTimestamp, setDoc, updateDoc } from "firebase/firestore";
+// src/pages/Users/usersActions.js
+import {
+  addDoc,
+  collection,
+  doc,
+  serverTimestamp,
+  setDoc,
+  updateDoc,
+  deleteField,
+} from "firebase/firestore";
 import { db, auth } from "../../lib/firebase";
 
-// If you key users by email-as-id, keep this. If you use auto IDs, ignore it.
+/** Normalize an email into a stable doc id (only if you use email-as-id). */
 export const userIdFromEmail = (email) =>
-  (email || "").toLowerCase().replace(/[^a-z0-9]/g, "_");
+  (email || "").toLowerCase().trim().replace(/[^a-z0-9]/g, "_");
+
+/** Build a memberships mirror from workspaceIds (back-compat; safe to remove later). */
+const buildMemberships = (workspaceIds = [], role = "collaborator", collaboratorPerms = null) => {
+  const m = {};
+  for (const wid of workspaceIds.map(String)) {
+    m[wid] =
+      role === "collaborator"
+        ? { assigned: true, permissions: { ...(collaboratorPerms || {}) } }
+        : { assigned: true };
+  }
+  return m;
+};
 
 /**
- * Create/update a user admin-record and create an invite capturing workspace assignments.
- * payload: { name, email, role, workspaceIds: string[], collaboratorPerms?: {content,audits,reports} }
+ * Create (or upsert) a user admin record + create an invite.
+ * Canonical: workspaceIds[]
+ * Mirror (for now): memberships map derived from workspaceIds
  */
 export async function addUserWithInvite(payload) {
-  const { name, email, role, workspaceIds = [], collaboratorPerms = null } = payload;
-  const normalizedEmail = (email || "").trim().toLowerCase();
+  const {
+    name = "",
+    email = "",
+    role = "collaborator",
+    workspaceIds = [],
+    collaboratorPerms = null,
+  } = payload;
+
+  const normalizedEmail = String(email).trim().toLowerCase();
   const createdBy = auth.currentUser?.uid || "system";
   const userDocId = userIdFromEmail(normalizedEmail);
 
-  // Build memberships map for admin UI record
-  const memberships = {};
-  workspaceIds.forEach((wid) => {
-    memberships[wid] =
-      role === "collaborator"
-        ? { permissions: { ...(collaboratorPerms || {}) } }
-        : { assigned: true };
-  });
+  const safeWorkspaceIds = (workspaceIds || []).map(String);
+  const memberships = buildMemberships(safeWorkspaceIds, role, collaboratorPerms);
 
-  // Upsert users admin-record
+  // Upsert admin record
   await setDoc(
     doc(db, "users", userDocId),
     {
-      name: (name || "").trim(),
+      name: String(name).trim(),
       email: normalizedEmail,
-      role, // global role
+      role,
       isActive: true,
       lastLogin: null,
       createdAt: serverTimestamp(),
       createdBy,
+      // Canonical
+      workspaceIds: safeWorkspaceIds,
+      // Mirror (remove later if not needed)
       memberships,
+      updatedAt: serverTimestamp(),
     },
     { merge: true }
   );
@@ -43,9 +70,9 @@ export async function addUserWithInvite(payload) {
   // Create invite (fulfilled on first login)
   await addDoc(collection(db, "invites"), {
     email: normalizedEmail,
-    role,                 // global role at invite time
-    workspaceIds,         // array of workspace IDs
-    collaboratorPerms,    // null unless collaborator
+    role,
+    workspaceIds: safeWorkspaceIds,
+    collaboratorPerms,
     status: "pending",
     createdAt: serverTimestamp(),
     createdBy,
@@ -53,13 +80,19 @@ export async function addUserWithInvite(payload) {
 }
 
 /**
- * Update basic user fields for the admin-record.
- * docId: Firestore document id for users collection (e.g., email-as-id or auto-id you’re using in the list).
- * changes: { name?, email?, role?, workspaceIds?, collaboratorPerms? }
+ * Update a user admin record.
+ * - Replaces workspaceIds with exactly what you pass (including empty array).
+ * - Mirrors memberships from workspaceIds (or deletes memberships if none).
+ * - Leaves other provided fields as-is.
  *
- * NOTE: This updates the admin-record only. If you also want to sync workspace membership
- * objects under workspaces/{wid}.members.{uid}, do that in a separate flow (e.g., on first login
- * using fulfillInviteOnFirstLogin, or an explicit "sync memberships" admin action).
+ * @param {string} docId Firestore doc id of the user
+ * @param {{
+ *  name?: string,
+ *  email?: string,
+ *  role?: string,
+ *  workspaceIds?: string[],
+ *  collaboratorPerms?: {content?:boolean,audits?:boolean,reports?:boolean}|null
+ * }} changes
  */
 export async function updateUserBasic(docId, changes) {
   const next = {};
@@ -67,56 +100,66 @@ export async function updateUserBasic(docId, changes) {
   if (changes.email != null) next.email = String(changes.email).trim().toLowerCase();
   if (changes.role != null) next.role = String(changes.role);
 
-  // Optionally update memberships if provided (same shape as add)
+  // Canonical: always write workspaceIds if provided; if not provided, leave unchanged.
+  // If you want "always replace" semantics even when omitted, uncomment the else block below.
   if (Array.isArray(changes.workspaceIds)) {
+    const safeWorkspaceIds = changes.workspaceIds.map(String);
+    next.workspaceIds = safeWorkspaceIds;
+
+    // Mirror memberships for back-compat; delete when empty to ensure removals persist
     const role = next.role || changes.role || "collaborator";
-    const memberships = {};
-    changes.workspaceIds.forEach((wid) => {
-      memberships[wid] =
-        role === "collaborator"
-          ? { permissions: { ...(changes.collaboratorPerms || {}) } }
-          : { assigned: true };
-    });
-    next.memberships = memberships;
+    if (safeWorkspaceIds.length > 0) {
+      next.memberships = buildMemberships(safeWorkspaceIds, role, changes.collaboratorPerms || null);
+    } else {
+      next.memberships = deleteField(); // remove the field if no workspaces selected
+    }
   }
-  if (changes.collaboratorPerms && !Array.isArray(changes.workspaceIds)) {
-    // If only perms changed and we already have memberships in the doc,
-    // the UI should read/merge per workspace. For simplicity we overwrite nothing here.
-    // (Add a more complex merge if you store perms per wid and allow editing them here.)
+
+  // Collaborator perms are global in your current UI; keep or null them.
+  if ("collaboratorPerms" in changes) {
+    next.collaboratorPerms = changes.collaboratorPerms ?? null;
   }
 
   next.updatedAt = serverTimestamp();
 
-  await setDoc(doc(db, "users", docId), next, { merge: true });
+  await updateDoc(doc(db, "users", docId), next);
 }
 
 /**
- * Call this after first login (or via a backend) to link Auth UID to workspaces.
- * Copies role + (if collaborator) permissions into each workspace’s members map,
- * and mirrors memberships onto users/{uid} (canonical, keyed by real UID).
+ * Fulfill invite after first login by linking Auth UID to workspaces.
+ * (You can keep or remove this depending on your flow.)
  */
-export async function fulfillInviteOnFirstLogin({ uid, email, role, workspaceIds = [], collaboratorPerms = null }) {
-  for (const wid of workspaceIds) {
+export async function fulfillInviteOnFirstLogin({
+  uid,
+  email,
+  role,
+  workspaceIds = [],
+  collaboratorPerms = null,
+}) {
+  const safeWorkspaceIds = (workspaceIds || []).map(String);
+
+  // Copy membership onto each workspace doc (denormalized)
+  for (const wid of safeWorkspaceIds) {
     await updateDoc(doc(db, "workspaces", wid), {
       [`members.${uid}`]:
         role === "collaborator"
           ? { role, permissions: { ...(collaboratorPerms || {}) } }
           : { role },
+      updatedAt: serverTimestamp(),
     });
   }
 
+  // Mirror onto users/{uid} (if you keep a separate auth-uid keyed doc)
   await setDoc(
     doc(db, "users", uid),
     {
-      email: (email || "").toLowerCase(),
+      email: String(email || "").toLowerCase(),
       role,
-      memberships: workspaceIds.reduce((acc, wid) => {
-        acc[wid] =
-          role === "collaborator"
-            ? { permissions: { ...(collaboratorPerms || {}) } }
-            : { assigned: true };
-        return acc;
-      }, {}),
+      workspaceIds: safeWorkspaceIds, // canonical
+      // mirror for legacy readers (optional)
+      memberships: safeWorkspaceIds.length
+        ? buildMemberships(safeWorkspaceIds, role, collaboratorPerms)
+        : deleteField(),
       updatedAt: serverTimestamp(),
     },
     { merge: true }
