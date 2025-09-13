@@ -61,24 +61,23 @@ export default function AuditsList() {
     </p>
   </div>
 
-  {/* Right: Active Audits + Import CSV */}
-  <div className="flex items-center gap-6">
-    {/* Active Audits Stat Card */}
-    <div className="bg-white border border-gray-200 rounded-lg shadow-sm px-4 py-2 text-center">
-      <div className="text-sm font-medium text-gray-600">Active Audits</div>
-      <div className="text-2xl font-bold text-blue-600">{activeCount}</div>
-    </div>
+{/* Right: Import CSV + Active Audits */}
+<div className="flex items-center gap-4">
+  {/* Admin-only Import CSV */}
+  {isAdmin && (
+    <button
+      onClick={() => setShowImport(true)}
+      className="inline-flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-md text-sm hover:bg-blue-700"
+    >
+      <Upload className="w-4 h-4" />
+      Import Audit CSV
+    </button>
+  )}
 
-    {/* Admin-only Import CSV */}
-    {isAdmin && (
-      <button
-        onClick={() => setShowImport(true)}
-        className="inline-flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-md text-sm hover:bg-blue-700"
-      >
-        <Upload className="w-4 h-4" />
-        Import Audit CSV
-      </button>
-    )}
+  {/* Active Audits Stat Card */}
+  <div className="bg-white border border-gray-200 rounded-md shadow-sm px-4 py-2 text-center">
+    <div className="text-xs font-medium text-gray-600">Active Audits</div>
+    <div className="text-lg font-bold text-blue-600">{activeCount}</div>
   </div>
 </div>
 
