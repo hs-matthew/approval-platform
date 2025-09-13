@@ -19,6 +19,9 @@ function WorkspaceMultiSelect({
   const [query, setQuery] = React.useState("");
   const [activeIndex, setActiveIndex] = React.useState(-1);
 
+   // Are we editing an existing user?
+   const isEdit = Boolean(initialValues && (initialValues.id || initialValues.email));
+
   const idToName = React.useMemo(() => {
     const m = new Map();
     for (const o of options) m.set(o.id, o.name || o.id);
@@ -265,24 +268,41 @@ const UserForm = ({
     return Object.keys(e).length === 0;
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!validate()) return;
-    setIsSubmitting(true);
-    try {
-      const payload = {
-        name: formData.name.trim(),
-        email: formData.email.trim().toLowerCase(),
-        role: formData.role,
-        workspaceIds: formData.workspaceIds,
-        collaboratorPerms: formData.role === "collaborator" ? formData.collaboratorPerms : null,
-        createdAt: new Date().toISOString(),
-        isActive: true,
-        lastLogin: null,
-        createdBy: "system",
-      };
-      await onAddUser(payload);
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  if (!validate()) return;
+  setIsSubmitting(true);
+  try {
+    // Build a base from current form fields
+    const base = {
+      name: formData.name.trim(),
+      email: formData.email.trim().toLowerCase(),
+      role: formData.role,
+      workspaceIds: formData.workspaceIds,
+      collaboratorPerms: formData.role === "collaborator" ? formData.collaboratorPerms : null,
+    };
 
+    // Preserve existing record fields if editing; set createdAt only on create; always set updatedAt
+    const payload = {
+      ...(initialValues || {}),                 // keep existing fields like id, createdAt, createdBy, etc.
+      ...base,                                  // override with latest form values
+      createdAt: initialValues?.createdAt ?? new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      isActive: initialValues?.isActive ?? true,
+      lastLogin: initialValues?.lastLogin ?? null,
+      createdBy: initialValues?.createdBy ?? "system",
+      id: initialValues?.id ?? undefined,       // include id if you have one
+    };
+
+    await onAddUser(payload); // or onUpdateUser(payload) if you split handlers
+
+    if (isEdit) {
+      // In edit mode, keep values on screen; just show success
+      setValidationErrors({});
+      setShowSuccess(true);
+      setTimeout(() => setShowSuccess(false), 2500);
+    } else {
+      // In create mode, reset the form
       setFormData({
         name: "",
         email: "",
@@ -293,23 +313,27 @@ const UserForm = ({
       setValidationErrors({});
       setShowSuccess(true);
       setTimeout(() => setShowSuccess(false), 3000);
-    } catch (err) {
-      console.error(err);
-      setValidationErrors({ submit: "Failed to create user. Please try again." });
-    } finally {
-      setIsSubmitting(false);
     }
-  };
-
+  } catch (err) {
+    console.error(err);
+    setValidationErrors({ submit: "Failed to save user. Please try again." });
+  } finally {
+    setIsSubmitting(false);
+  }
+};
   return (
     <div className={`bg-white rounded-lg shadow-sm border border-gray-200 p-6 ${className}`}>
       {showTitle && (
         <div className="mb-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-2 flex items-center gap-2">
-            <UserPlus className="w-5 h-5 text-blue-600" />
-            Add New User
-          </h3>
-          <p className="text-sm text-gray-600">Create a user, assign workspaces, and (if collaborator) set permissions.</p>
+  {isEdit ? <Edit className="w-5 h-5 text-blue-600" /> : <UserPlus className="w-5 h-5 text-blue-600" />}
+  {isEdit ? "Edit User" : "Add New User"}
+</h3>
+<p className="text-sm text-gray-600">
+  {isEdit
+    ? "Update user details, workspaces, and (if collaborator) permissions."
+    : "Create a user, assign workspaces, and (if collaborator) set permissions."}
+</p>
         </div>
       )}
 
@@ -317,8 +341,12 @@ const UserForm = ({
         <div className="mb-6 p-4 bg-green-50 border-2 border-green-300 rounded-lg flex items-center gap-3 shadow-md">
           <CheckCircle className="w-6 h-6 text-green-600" />
           <div>
-            <h4 className="text-base font-semibold text-green-800">User created!</h4>
-            <p className="text-sm text-green-700">An invite record has been created for this email.</p>
+            <h4 className="text-base font-semibold text-green-800">
+            {isEdit ? "User updated!" : "User created!"}
+            </h4>
+            <p className="text-sm text-green-700">
+           {isEdit ? "Changes have been saved." : "An invite record has been created for this email."}
+            </p>
           </div>
           <button onClick={() => setShowSuccess(false)} className="ml-auto text-green-700 p-1">✕</button>
         </div>
@@ -443,7 +471,7 @@ const UserForm = ({
             }`}
           >
             <UserPlus className="w-4 h-4" />
-            {isSubmitting ? "Creating…" : "Create User"}
+            {isSubmitting ? (isEdit ? "Saving…" : "Creating…") : (isEdit ? "Save Changes" : "Create User")}
           </button>
           {onCancel && (
             <button
@@ -469,9 +497,19 @@ const UserForm = ({
           <Mail className="w-4 h-4" /> Next Steps
         </h4>
         <ul className="text-xs text-blue-800 space-y-1">
-          <li>• An invite record will be created for this email</li>
-          <li>• On first login, the account will be linked to the selected workspaces</li>
-          <li>• Collaborator permissions apply per assigned workspace</li>
+{isEdit ? (
+  <>
+    <li>• Changes take effect immediately</li>
+    <li>• Workspace assignments and collaborator permissions were updated</li>
+  </>
+) : (
+  <>
+    <li>• An invite record will be created for this email</li>
+    <li>• On first login, the account will be linked to the selected workspaces</li>
+  </>
+)}
+<li>• Collaborator permissions apply per assigned workspace</li>
+
         </ul>
       </div>
     </div>
