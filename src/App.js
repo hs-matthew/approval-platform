@@ -4,6 +4,7 @@ import { Routes, Route, Navigate } from "react-router-dom";
 
 // Auth
 import AcceptInvite from "./pages/Auth/AcceptInvite";
+import Login from "./pages/Auth/Login";
 
 // Layout
 import Navigation from "./components/layout/Navigation";
@@ -229,6 +230,7 @@ function LoginPlaceholder() {
       />
 {/* Auth */}
 <Route path="/accept-invite" element={<AcceptInvite />} />
+<Route path="/login" element={<Login />} />
 
       {/* Reports */}
       <Route path="/reports" element={<ReportsList />} />
