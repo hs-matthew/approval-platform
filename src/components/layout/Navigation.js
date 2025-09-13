@@ -175,4 +175,59 @@ export default function Navigation({ currentUser }) {
           {photoURL ? (
             <img src={photoURL} alt={name || email} className="h-8 w-8 rounded-full object-cover border border-gray-200" />
           ) : (
-            <div className
+            <div className="h-8 w-8 rounded-full bg-gray-200 text-gray-700 flex items-center justify-center font-semibold border border-gray-300">
+              {initials}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Mobile slide-down panel */}
+      {mobileOpen && (
+        <div
+          ref={mobileRef}
+          className="md:hidden border-t border-gray-200 bg-white px-4 pb-4 pt-3 shadow-sm"
+        >
+          <nav className="flex flex-col gap-1">
+            <NavLinks onNavigate={() => setMobileOpen(false)} />
+          </nav>
+
+          <div className="mt-3">
+            <WorkspaceSelect />
+          </div>
+
+          <div className="mt-3 rounded-lg border border-gray-200 overflow-hidden">
+            {rolePrimary && (
+              <div className="px-3 py-2 bg-gray-50 border-b border-gray-200">
+                <span className="px-2 py-0.5 rounded-full text-xs font-semibold text-purple-700 bg-purple-100">
+                  {rolePrimary.charAt(0).toUpperCase() + rolePrimary.slice(1)}
+                </span>
+              </div>
+            )}
+            <button
+              onClick={() => { setMobileOpen(false); navigate("/profile"); }}
+              className="w-full text-left px-4 py-2 text-sm hover:bg-gray-50"
+            >
+              Profile
+              <div className="text-xs text-gray-500 truncate">{email}</div>
+            </button>
+            {isAdmin && (
+              <>
+                <div className="my-1 border-t border-gray-200" />
+                <button onClick={() => { setMobileOpen(false); navigate("/users"); }} className="w-full text-left px-4 py-2 text-sm hover:bg-gray-50">Manage Users</button>
+                <button onClick={() => { setMobileOpen(false); navigate("/workspaces"); }} className="w-full text-left px-4 py-2 text-sm hover:bg-gray-50">Manage Workspaces</button>
+              </>
+            )}
+            <div className="my-1 border-t border-gray-200" />
+            <button
+              onClick={async () => { setMobileOpen(false); await signOut(auth); navigate("/login"); }}
+              className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50"
+            >
+              Sign Out
+            </button>
+          </div>
+        </div>
+      )}
+    </header>
+  );
+}
