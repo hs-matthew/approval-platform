@@ -25,7 +25,6 @@ import Users from "./pages/Users/Users";
 import AddUser from "./pages/Users/AddUser";
 import EditUser from "./pages/Users/EditUser";
 import UserProfile from "./pages/Users/UserProfile";
-import ProfileEdit from "./pages/Users/ProfileEdit";
 
 import ReportsList from "./pages/Reports/ReportsList";
 import ReportDetail from "./pages/Reports/ReportDetail";
