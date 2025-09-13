@@ -1,3 +1,4 @@
+// src/hooks/useCurrentUser.js
 import { useEffect, useMemo, useState } from "react";
 import { onAuthStateChanged, onIdTokenChanged, getIdTokenResult } from "firebase/auth";
 import { doc, onSnapshot } from "firebase/firestore";
@@ -9,15 +10,19 @@ export default function useCurrentUser() {
   const [docData, setDocData] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Auth user + claims
+  // Auth user
   useEffect(() => {
-    const unsubAuth = onAuthStateChanged(auth, async (u) => {
+    const unsub = onAuthStateChanged(auth, (u) => {
       setAuthUser(u || null);
       setLoading(false);
     });
-    // keep claims fresh
-    const unsubClaims = onIdTokenChanged(auth, async (u) => {
-      if (!u) { setClaims(null); return; }
+    return () => unsub();
+  }, []);
+
+  // Custom claims (e.g., role)
+  useEffect(() => {
+    const unsub = onIdTokenChanged(auth, async (u) => {
+      if (!u) return setClaims(null);
       try {
         const res = await getIdTokenResult(u);
         setClaims(res.claims || null);
@@ -25,10 +30,10 @@ export default function useCurrentUser() {
         setClaims(null);
       }
     });
-    return () => { unsubAuth(); unsubClaims(); };
+    return () => unsub();
   }, []);
 
-  // Firestore user doc
+  // Firestore profile doc
   useEffect(() => {
     if (!authUser?.uid) { setDocData(null); return; }
     const unsub = onSnapshot(doc(db, "users", authUser.uid), (snap) => {
@@ -37,7 +42,7 @@ export default function useCurrentUser() {
     return () => unsub();
   }, [authUser?.uid]);
 
-  // Merge: Firestore wins for profile fields we persist; fallback to Auth
+  // Merge: Firestore fields override Auth; fallbacks preserved
   const currentUser = useMemo(() => {
     if (!authUser) return null;
     const roleFromDoc = docData?.role;
@@ -49,10 +54,9 @@ export default function useCurrentUser() {
       uid: authUser.uid,
       email: authUser.email,
       name: (docData?.name || authUser.displayName || "").trim(),
-      photoURL: (docData?.photoURL || authUser.photoURL || null),
+      photoURL: docData?.photoURL || authUser.photoURL || null,
       role: roleFromDoc || roleFromClaims || "collaborator",
       roles,
-      // pass through anything else you care about:
       phone: docData?.phone || "",
       bio: docData?.bio || "",
       workspaceIds: Array.isArray(docData?.workspaceIds) ? docData.workspaceIds : [],
