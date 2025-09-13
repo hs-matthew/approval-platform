@@ -133,11 +133,6 @@ export default function ReportsList() {
         </button>
       </div>
     </div>
-  );
-})}
-
-
-
           );
         })}
       </div>
