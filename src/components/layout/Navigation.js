@@ -1,30 +1,43 @@
+// src/components/layout/Navigation.js
 import React, { useEffect, useRef, useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { signOut } from "firebase/auth";
 import { auth } from "../../lib/firebase";
 import { useWorkspace } from "../../context/WorkspaceContext";
+import useCurrentUser, { getPrimaryRole, canAdminister } from "../../hooks/useCurrentUser";
 
 export default function Navigation({ currentUser }) {
   const navigate = useNavigate();
-  const [open, setOpen] = useState(false); // avatar dropdown for both desktop+mobile
+  const [open, setOpen] = useState(false); // avatar dropdown
   const menuRef = useRef(null);
 
+  // Workspaces
   const { workspaces, activeWorkspaceId, setActiveWorkspaceId, activeWorkspace, loadingWorkspaces } = useWorkspace();
 
-  const name = currentUser?.name || currentUser?.displayName || "";
-  const email = currentUser?.email || "";
-  const rolesNorm = Array.isArray(currentUser?.roles)
-    ? currentUser.roles.map((r) => String(r).toLowerCase())
-    : currentUser?.role
-      ? [String(currentUser.role).toLowerCase()]
-      : [];
-  const rolePrimary = rolesNorm[0] || "";
-  const isAdmin = rolesNorm.includes("admin");
+  // Centralized user + perms
+  const {
+    currentUser: userFromHook,
+    rolePrimary: rolePrimaryFromHook,
+    isPrivileged: isPrivilegedFromHook,
+    canContent,
+    canAudits,
+    canReports,
+  } = useCurrentUser();
 
-  const photoURL = currentUser?.photoURL;
+  // Prefer prop if passed (keeps your existing pattern), else fall back to hook
+  const user = currentUser || userFromHook || {};
+  const name = user?.name || user?.displayName || "";
+  const email = user?.email || "";
+  const photoURL = user?.photoURL || null;
+
+  // Role badge + privilege (Owner/Admin)
+  const rolePrimary = rolePrimaryFromHook || getPrimaryRole(user);
+  const isPrivileged = typeof isPrivilegedFromHook === "boolean" ? isPrivilegedFromHook : canAdminister(user);
+
   const initials =
     (name || email).trim().split(/\s+/).slice(0, 2).map((s) => s[0]?.toUpperCase()).join("") || "U";
 
+  // Close on outside click / Esc
   useEffect(() => {
     const onClick = (e) => { if (menuRef.current && !menuRef.current.contains(e.target)) setOpen(false); };
     const onKey = (e) => { if (e.key === "Escape") setOpen(false); };
@@ -50,9 +63,15 @@ export default function Navigation({ currentUser }) {
   const NavLinks = ({ onNavigate }) => (
     <>
       <NavLink to="/dashboard" onClick={onNavigate} className={({ isActive }) => `${linkBase} ${isActive ? active : inactive}`}>Dashboard</NavLink>
-      <NavLink to="/content"   onClick={onNavigate} className={({ isActive }) => `${linkBase} ${isActive ? active : inactive}`}>Content</NavLink>
-      <NavLink to="/audits"    onClick={onNavigate} className={({ isActive }) => `${linkBase} ${isActive ? active : inactive}`}>Audits</NavLink>
-      <NavLink to="/reports" onClick={onNavigate} className={({ isActive }) => `${linkBase} ${isActive ? active : inactive}`}>Reports</NavLink>
+      {canContent && (
+        <NavLink to="/content" onClick={onNavigate} className={({ isActive }) => `${linkBase} ${isActive ? active : inactive}`}>Content</NavLink>
+      )}
+      {canAudits && (
+        <NavLink to="/audits" onClick={onNavigate} className={({ isActive }) => `${linkBase} ${isActive ? active : inactive}`}>Audits</NavLink>
+      )}
+      {canReports && (
+        <NavLink to="/reports" onClick={onNavigate} className={({ isActive }) => `${linkBase} ${isActive ? active : inactive}`}>Reports</NavLink>
+      )}
     </>
   );
 
@@ -86,7 +105,7 @@ export default function Navigation({ currentUser }) {
             <h1 className="text-xl font-bold text-gray-900">Content Approval Platform</h1>
           </NavLink>
 
-          {/* Desktop nav */}
+          {/* Desktop nav (conditionally rendered items) */}
           <nav className="hidden md:flex items-center gap-2 ml-2">
             <NavLinks onNavigate={() => {}} />
           </nav>
@@ -99,7 +118,7 @@ export default function Navigation({ currentUser }) {
             <WorkspaceSelect />
           </div>
 
-          {/* Avatar (triggers dropdown on both desktop + mobile) */}
+          {/* Avatar toggles dropdown (both desktop + mobile) */}
           <button
             onClick={() => setOpen((o) => !o)}
             aria-haspopup="menu"
@@ -116,7 +135,6 @@ export default function Navigation({ currentUser }) {
             )}
           </button>
 
-          {/* Dropdown (right aligned). On mobile it includes nav + workspace; on desktop it's your original menu */}
           {open && (
             <div
               role="menu"
@@ -131,7 +149,7 @@ export default function Navigation({ currentUser }) {
                 </div>
               )}
 
-              {/* MOBILE-ONLY: Primary nav links */}
+              {/* MOBILE-ONLY: Primary nav (conditional) */}
               <div className="md:hidden px-2 pt-2">
                 <nav className="flex flex-col gap-1">
                   <NavLinks onNavigate={() => setOpen(false)} />
@@ -143,22 +161,21 @@ export default function Navigation({ currentUser }) {
                 <WorkspaceSelect />
               </div>
 
-              {/* Shared actions */}
+              {/* Profile row (whole row clickable to UserProfile) */}
               <div className="my-2 border-t border-gray-200" />
+              <button
+                onClick={() => { setOpen(false); navigate("/user-profile"); }}
+                className="w-full flex items-center justify-between px-4 py-2 hover:bg-gray-100"
+              >
+                <div className="flex flex-col items-start text-left">
+                  <span className="text-sm font-medium text-gray-900">{name || email}</span>
+                  <span className="text-xs text-gray-500 truncate">{email}</span>
+                </div>
+                <span className="text-xs text-blue-600 ml-2">Edit</span>
+              </button>
 
-<button
-  onClick={() => { setOpen(false); navigate("/Profile"); }}
-  className="w-full flex items-center justify-between px-4 py-2 hover:bg-gray-100"
->
-  <div className="flex flex-col items-start text-left">
-    <span className="text-sm font-medium text-gray-900">{name || email}</span>
-    <span className="text-xs text-gray-500 truncate">{email}</span>
-  </div>
-  <span className="text-xs text-blue-600 ml-2">Edit Profile</span>
-</button>
-
-              {/* Desktop-only admin items (mobile also shows them here) */}
-              {isAdmin && (
+              {/* Admin/Owner actions */}
+              {isPrivileged && (
                 <>
                   <div className="my-1 border-t border-gray-200" />
                   <button onClick={() => { setOpen(false); navigate("/users"); }} className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100">Manage Users</button>
@@ -167,7 +184,6 @@ export default function Navigation({ currentUser }) {
               )}
 
               <div className="my-1 border-t border-gray-200" />
-
               <button
                 onClick={async () => { setOpen(false); await signOut(auth); navigate("/login"); }}
                 className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50"
