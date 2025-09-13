@@ -190,34 +190,37 @@ const UserForm = ({
   initialValues = null,
    allowEmailEdit = false
 }) => {
-   // Helper to safely shape form data (used for both create and edit)
-  const normalize = (vals) => {
-    let workspaceIds = [];
-    if (Array.isArray(vals?.workspaceIds)) {
-      workspaceIds = vals.workspaceIds;
-    } else if (vals?.memberships && typeof vals.memberships === "object") {
-      workspaceIds = Object.entries(vals.memberships)
-        .filter(([_, v]) => {
-          if (v == null) return false;
-          if (typeof v === "boolean") return v;               // e.g., { wsId: true }
-          if (typeof v === "object") return v.assigned !== false; // e.g., { wsId: { assigned: true } }
-          return false;
-        })
-        .map(([k]) => k);
-    }
 
-    return {
-      name: vals?.name ?? "",
-      email: vals?.email ?? "",
-      role: vals?.role ?? "collaborator",
-      workspaceIds,
-      collaboratorPerms: vals?.collaboratorPerms ?? {
-        content: true,
-        audits: false,
-        reports: false,
-      },
-    };
+   // Helper to safely shape form data (used for both create and edit)
+const normalize = (vals) => {
+  let workspaceIds = [];
+  if (Array.isArray(vals?.workspaceIds)) {
+    workspaceIds = vals.workspaceIds;
+  } else if (vals?.memberships && typeof vals.memberships === "object") {
+    // Accept ANY truthy membership value:
+    //  - boolean true
+    //  - string role ("collaborator", etc.)
+    //  - object with assigned !== false
+    workspaceIds = Object.entries(vals.memberships)
+      .filter(([_, v]) => {
+        if (v == null) return false;
+        if (typeof v === "boolean") return v;                 // true
+        if (typeof v === "string") return v.trim().length > 0; // "collaborator"
+        if (typeof v === "object") return v.assigned !== false; // { assigned: true } or missing assigned
+        return false;
+      })
+      .map(([k]) => k);
+  }
+
+  return {
+    name: vals?.name ?? "",
+    email: vals?.email ?? "",
+    role: vals?.role ?? "collaborator",
+    workspaceIds,
+    collaboratorPerms: vals?.collaboratorPerms ?? { content: true, audits: false, reports: false },
   };
+};
+
 
   // Initialize form state (handles both create and edit)
   const [formData, setFormData] = useState(() =>
