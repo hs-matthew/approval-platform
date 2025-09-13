@@ -118,23 +118,22 @@ const loading = loadingUsers || loadingWorkspaces || loadingInvites;
     <div className="max-w-6xl mx-auto p-6">
       <div className="flex items-center justify-between mb-4">
         <h1 className="text-xl font-semibold">Users</h1>
-        <button
-          className="inline-flex items-center gap-2 px-3 py-2 rounded-md bg-blue-600 text-white text-sm hover:bg-blue-700"
-          onClick={() => navigate("/users/new")}
-        >
-          <Plus className="w-4 h-4" /> Add User
-        </button>
-            {/* Pending Invites button (only shows when there are any) */}
-{pendingInvites.length > 0 && (
-         <button
-            className="ml-2 inline-flex items-center gap-2 px-3 py-2 rounded-md bg-amber-600 text-white text-sm hover:bg-amber-700"
-            onClick={() => navigate("/invites")}
-            title="View pending invites"
+        <div className="flex items-center gap-4">
+          {pendingInvites.length > 0 && (
+            <button
+              className="text-sm text-blue-600 hover:underline"
+              onClick={() => navigate("/invites")}
+            >
+              Pending Invites ({pendingInvites.length})
+            </button>
+          )}
+          <button
+            className="inline-flex items-center gap-2 px-3 py-2 rounded-md bg-blue-600 text-white text-sm hover:bg-blue-700"
+            onClick={() => navigate("/users/new")}
           >
-            <MailQuestion className="w-4 h-4" />
-            Pending Invites ({pendingInvites.length})
+            <Plus className="w-4 h-4" /> Add User
           </button>
-        )}
+        </div>
       </div>
 
       <div className="flex items-center gap-3 mb-4">
