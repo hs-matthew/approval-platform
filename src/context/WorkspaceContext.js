@@ -1,20 +1,24 @@
 // src/context/WorkspaceContext.js
-import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
-import { onSnapshot, doc, collection, query, where } from "firebase/firestore";
-import { db } from "../lib/firebase"; // your initialized Firestore
-import { useAuth } from "../hooks/useAuth"; // returns { user, loading }
+import * as React from "react";                     // ⟵ key change
+import { collection, onSnapshot, query, where } from "firebase/firestore";
+import { db } from "../lib/firebase";
+import { useAuth } from "../hooks/useAuth";
 
-const WorkspaceContext = createContext(null);
+const WorkspaceContext = React.createContext(undefined);
 
 export function WorkspaceProvider({ children }) {
-  const { user, loading } = useAuth();
-  const [workspaces, setWorkspaces] = useState([]); // [{id, name, ...}]
-  const [activeWorkspaceId, setActiveWorkspaceId] = useState(null);
-  const [loadingWorkspaces, setLoadingWorkspaces] = useState(true);
+  const { user, loading: authLoading } = useAuth();
+  const [workspaces, setWorkspaces] = React.useState([]);
+  const [activeWorkspaceId, setActiveWorkspaceId] = React.useState(null);
+  const [loadingWorkspaces, setLoadingWorkspaces] = React.useState(true);
 
-  // Load workspaces for current user
-  useEffect(() => {
-    if (loading) return; // wait for auth state
+  const activeWorkspace = React.useMemo(
+    () => workspaces.find((w) => w.id === activeWorkspaceId) || null,
+    [workspaces, activeWorkspaceId]
+  );
+
+  React.useEffect(() => {
+    if (authLoading) return;
     if (!user) {
       setWorkspaces([]);
       setActiveWorkspaceId(null);
@@ -23,51 +27,49 @@ export function WorkspaceProvider({ children }) {
     }
 
     setLoadingWorkspaces(true);
-
-    // Example membership model: workspaces where members.<uid> exists (role string)
     const q = query(
       collection(db, "workspaces"),
-      where(`members.${user.uid}`, "in", ["admin","writer","client"])
+      where(`members.${user.uid}`, "in", ["admin", "writer", "client"])
     );
 
-    const unsub = onSnapshot(q, (snap) => {
-      const list = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
-      setWorkspaces(list);
-
-      // Restore persisted selection or default to first
-      const saved = localStorage.getItem("activeWorkspaceId");
-      const found = list.find(w => w.id === saved);
-      const nextId = found?.id ?? list[0]?.id ?? null;
-      setActiveWorkspaceId(nextId);
-      setLoadingWorkspaces(false);
-    });
+    const unsub = onSnapshot(
+      q,
+      (snap) => {
+        const list = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+        setWorkspaces(list);
+        const saved = localStorage.getItem("activeWorkspaceId");
+        const next = list.find((w) => w.id === saved)?.id || list[0]?.id || null;
+        setActiveWorkspaceId(next);
+        setLoadingWorkspaces(false);
+      },
+      () => setLoadingWorkspaces(false)
+    );
 
     return () => unsub();
-  }, [user, loading]);
+  }, [authLoading, user]);
 
-  // Persist selection
-  const selectWorkspace = (wid) => {
-    setActiveWorkspaceId(wid);
-    if (wid) localStorage.setItem("activeWorkspaceId", wid);
-  };
+  React.useEffect(() => {
+    if (activeWorkspaceId) localStorage.setItem("activeWorkspaceId", activeWorkspaceId);
+  }, [activeWorkspaceId]);
 
-  const value = useMemo(() => ({
-    workspaces,
-    activeWorkspaceId,
-    selectWorkspace,
-    loadingWorkspaces,
-    user
-  }), [workspaces, activeWorkspaceId, loadingWorkspaces, user]);
-
-  return (
-    <WorkspaceContext.Provider value={value}>
-      {children}
-    </WorkspaceContext.Provider>
+  const value = React.useMemo(
+    () => ({
+      workspaces,
+      activeWorkspaceId,
+      setActiveWorkspaceId,
+      activeWorkspace,
+      loadingWorkspaces,
+    }),
+    [workspaces, activeWorkspaceId, activeWorkspace, loadingWorkspaces]
   );
+
+  return <WorkspaceContext.Provider value={value}>{children}</WorkspaceContext.Provider>;
 }
 
 export function useWorkspace() {
-  const ctx = useContext(WorkspaceContext);
-  if (!ctx) throw new Error("useWorkspace must be used within WorkspaceProvider");
+  const ctx = React.useContext(WorkspaceContext);   // ⟵ no destructure
+  if (ctx === undefined) {
+    throw new Error("useWorkspace must be used within <WorkspaceProvider>");
+  }
   return ctx;
 }
