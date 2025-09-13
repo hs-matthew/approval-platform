@@ -51,29 +51,35 @@ export default function AuditsList() {
 
   return (
     <div className="max-w-6xl mx-auto p-6">
-      {/* Header */}
-      <div className="flex items-start justify-between mb-5">
-        <div>
-          <h1 className="text-3xl font-extrabold text-gray-900">Technical SEO Audits</h1>
-          <p className="text-gray-600">Review technical issues and track implementation progress</p>
-        </div>
+{/* Header */}
+<div className="flex items-center justify-between mb-5">
+  {/* Left: Title + description */}
+  <div>
+    <h1 className="text-3xl font-extrabold text-gray-900">Technical SEO Audits</h1>
+    <p className="text-gray-600">
+      Review technical issues and track implementation progress
+    </p>
+  </div>
 
-        <div className="text-right">
-          <div className="text-sm text-gray-500">Active Audits</div>
-          <div className="text-3xl font-bold text-blue-600">{activeCount}</div>
+  {/* Right: stats + import */}
+  <div className="flex items-center gap-6">
+    <div className="text-right">
+      <div className="text-sm text-gray-500">Active Audits</div>
+      <div className="text-3xl font-bold text-blue-600">{activeCount}</div>
+    </div>
 
-          {/* Admin-only: Import CSV */}
-          {isAdmin && (
-            <button
-              onClick={() => setShowImport(true)}
-              className="mt-3 inline-flex items-center gap-2 bg-blue-600 text-white px-3 py-2 rounded-md text-sm hover:bg-blue-700"
-            >
-              <Upload className="w-4 h-4" />
-              Import Audit CSV
-            </button>
-          )}
-        </div>
-      </div>
+    {/* Admin-only Import CSV */}
+    {isAdmin && (
+      <button
+        onClick={() => setShowImport(true)}
+        className="inline-flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-md text-sm hover:bg-blue-700"
+      >
+        <Upload className="w-4 h-4" />
+        Import Audit CSV
+      </button>
+    )}
+  </div>
+</div>
 
       {/* Cards */}
       <div className="space-y-5">
