@@ -1,7 +1,7 @@
 // src/pages/Reports/ReportsList.js
 import React from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Calendar, ExternalLink } from "lucide-react";
+import { Calendar, ArrowRight } from "lucide-react";
 
 // --- Mock list of monthly reports you have available ---
 export const mockReportIndex = [
@@ -146,7 +146,7 @@ export default function ReportsList() {
         className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 font-medium text-sm"
       >
         View Report
-        <ExternalLink className="w-4 h-4" />
+        <ArrowRight className="w-4 h-4" />
       </button>
     </div>
   </div>
