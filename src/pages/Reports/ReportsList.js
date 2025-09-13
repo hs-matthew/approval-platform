@@ -124,13 +124,13 @@ export default function ReportsList() {
 
       {/* Footer link */}
       <div className="mt-4 flex justify-end">
-        <button
+        <Link
           onClick={() => navigate(`/seo-reports/${r.id}`)}
-          className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 font-medium text-sm"
-        >
-          View Report
-          <ArrowRight className="w-4 h-4" />
-        </button>
+              className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 font-medium text-sm"
+            >
+              View Details
+              <ArrowRight className="w-4 h-4" />
+            </Link>
       </div>
     </div>
           );
