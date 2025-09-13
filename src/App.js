@@ -18,8 +18,12 @@ import { useSubmissions } from "./hooks/useSubmissions";
 import Dashboard from "./pages/Dashboard/Dashboard";
 import SubmitContent from "./pages/SubmitContent/SubmitContent";
 import ManageWorkspaces from "./pages/ManageWorkspaces/ManageWorkspaces";
-import ManageUsers from "./pages/ManageUsers/ManageUsers";
 import ReviewSubmission from "./pages/ReviewSubmission/ReviewSubmission";
+
+// Users
+import Users from "./pages/Users/Users";
+import AddUser from "./pages/Users/AddUser";
+import EditUser from "./pages/Users/EditUser";
 
 import ReportsList from "./pages/Reports/ReportsList";
 import ReportDetail from "./pages/Reports/ReportDetail";
@@ -226,11 +230,16 @@ function LoginPlaceholder() {
       {/* Audits */}
       <Route path="/audits" element={<AuditsList />} />
       <Route path="/audits/:id" element={<AuditDetail />} />
+      
+{/* Users */}
+<Route path="/users" element={<Users />} />
+<Route path="/users/new" element={<AddUser />} />
+<Route path="/users/:id/edit" element={<EditUser />} />
 
       {/* Admin */}
       <Route
         path="/users"
-        element={<ManageUsers users={users} currentUser={currentUser} onAddUser={onAddUser} />}
+        element={<Users users={users} currentUser={currentUser} onAddUser={onAddUser} />}
       />
       <Route
         path="/workspaces"
