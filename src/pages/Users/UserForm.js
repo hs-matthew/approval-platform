@@ -187,7 +187,8 @@ const UserForm = ({
   onCancel = null,
   className = "",
   showTitle = true,
-  initialValues = null
+  initialValues = null,
+   allowEmailEdit = false
 }) => {
   // Helper to safely shape form data (used for both create and edit)
   const normalize = (vals) => ({
@@ -262,27 +263,22 @@ const UserForm = ({
     else if (name.length < 2) e.name = "Name must be at least 2 characters";
     else if (name.length > 50) e.name = "Name must be < 50 characters";
 
-    if (!email) {
-      e.email = "Email is required";
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      e.email = "Enter a valid email";
-    } else {
-  // Prevent duplicates, but allow the same user in edit mode
-  const currentId = initialValues?.id ?? null;
-  const originalEmail = (initialValues?.email || "").toLowerCase();
+if (!email) {
+  e.email = "Email is required";
+} else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+  e.email = "Enter a valid email";
+} else {
+  // Only check for duplicates if creating OR if editing and email editing is enabled AND changed
+  const shouldCheckDup =
+    !isEdit ||
+    (allowEmailEdit && email !== (initialValues?.email || "").toLowerCase());
 
-  const isSameUser = (u) =>
-    (currentId && u.id === currentId) ||
-    ((u.email || "").toLowerCase() === originalEmail);
-
-  const duplicate = users.some((u) => {
-    const uEmail = (u.email || "").toLowerCase();
-    if (uEmail !== email) return false;      // not the same email, ignore
-    if (isEdit && isSameUser(u)) return false; // same person, allow
-    return true;                              // someone else has this email
-  });
-
-  if (duplicate) e.email = "A user with this email already exists";
+  if (shouldCheckDup) {
+    const duplicate = users.some(
+      (u) => (u.email || "").toLowerCase() === email && u.id !== initialValues?.id
+    );
+    if (duplicate) e.email = "A user with this email already exists";
+  }
 }
 
     if (!ROLES.includes(formData.role)) e.role = "Select a valid role";
@@ -310,7 +306,10 @@ const UserForm = ({
         workspaceIds: formData.workspaceIds,
         collaboratorPerms: formData.role === "collaborator" ? formData.collaboratorPerms : null,
       };
-
+// 👇 Prevent email changes in edit mode unless explicitly allowed
+if (isEdit && !allowEmailEdit) {
+  base.email = (initialValues?.email || "").toLowerCase();
+}
       // Preserve existing record fields if editing; set createdAt only on create; always set updatedAt
       const payload = {
         ...(initialValues || {}),                 // keep existing fields like id, createdAt, createdBy, etc.
@@ -403,20 +402,25 @@ const UserForm = ({
         </div>
 
         {/* Email */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Email Address *</label>
-          <input
-            type="email"
-            value={formData.email}
-            onChange={(e) => handleInput("email", e.target.value)}
-            className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 ${
-              validationErrors.email ? "border-red-300 focus:ring-red-500" : "border-gray-300 focus:ring-blue-500"
-            }`}
-            disabled={isSubmitting}
-            placeholder="user@company.com"
-          />
-          {validationErrors.email && <p className="mt-1 text-sm text-red-600">{validationErrors.email}</p>}
-        </div>
+<div>
+  <label className="block text-sm font-medium text-gray-700 mb-2">Email Address *</label>
+  <input
+    type="email"
+    value={formData.email}
+    onChange={(e) => handleInput("email", e.target.value)}
+    className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 ${
+      validationErrors.email ? "border-red-300 focus:ring-red-500" : "border-gray-300 focus:ring-blue-500"
+    } ${isEdit && !allowEmailEdit ? "bg-gray-50 cursor-not-allowed" : ""}`}
+    disabled={isEdit && !allowEmailEdit || isSubmitting}
+    placeholder="user@company.com"
+  />
+  {isEdit && !allowEmailEdit && (
+    <p className="mt-1 text-xs text-gray-500">
+      Email is locked after account creation to prevent duplicates. Contact an admin if it must change.
+    </p>
+  )}
+  {validationErrors.email && <p className="mt-1 text-sm text-red-600">{validationErrors.email}</p>}
+</div>
 
         {/* Global Role (capitalized options) */}
         <div>
