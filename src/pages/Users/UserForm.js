@@ -375,7 +375,7 @@ const existing = (initialValues?.memberships && typeof initialValues.memberships
 // 1) ensure all selected ids are present (preserve existing object if present, else { assigned: true })
 // 2) drop any ids that are no longer selected
 const selectedSet = new Set(formData.workspaceIds || []);
-const nextMemberships = {};
+//const nextMemberships = {};
 
 // --- Build memberships from selected workspaceIds (overwrite, simple & consistent) ---
 const nextMemberships = Object.fromEntries(
