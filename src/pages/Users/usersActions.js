@@ -14,10 +14,16 @@ import {
 } from "firebase/firestore";
 import { db, auth } from "../../lib/firebase";
 
-/** Normalize and validate a role value */
+/** Normalize & guard role coming from the UI.
+ *  - Valid: owner, admin, staff, client, collaborator
+ *  - UI may NOT create "owner": if "owner" is passed, demote to "admin".
+ *  - Owner should be DB-managed only (manual in Firestore).
+ */
 function normalizeRole(role) {
   const r = String(role || "collaborator").toLowerCase();
-  return ["owner", "admin", "staff", "client", "collaborator"].includes(r) ? r : "collaborator";
+  const allowed = ["owner", "admin", "staff", "client", "collaborator"];
+  const clean = allowed.includes(r) ? r : "collaborator";
+  return clean === "owner" ? "admin" : clean;
 }
 
 const DEFAULT_COLLAB_PERMS = { content: true, audits: false, reports: false };
@@ -42,7 +48,7 @@ async function findUserByEmail(email) {
  * @param {{
  *  name?: string,
  *  email: string,
- *  role?: "owner"|"staff"|"collaborator",
+ *  role?: "owner"|"admin"|"staff"|"client"|"collaborator", // "owner" will be coerced to "admin"
  *  workspaceIds?: string[],
  *  collaboratorPerms?: {content?:boolean,audits?:boolean,reports?:boolean}|null
  * }} payload
@@ -57,14 +63,14 @@ export async function addUserWithInvite(payload) {
   } = payload;
 
   const normalizedEmail = String(email).trim().toLowerCase();
-  const roleNorm = normalizeRole(role);
+  const roleNorm = normalizeRole(role); // 🔒 guard
   const createdBy = auth.currentUser?.uid || "system";
   const safeWorkspaceIds = Array.isArray(workspaceIds) ? workspaceIds.map(String) : [];
 
   const baseData = {
     name: String(name).trim(),
     email: normalizedEmail,
-    role: roleNorm, // "owner" | "staff" | "collaborator"
+    role: roleNorm, // admin | staff | client | collaborator
     isActive: true,
     lastLogin: null,
     workspaceIds: safeWorkspaceIds, // ✅ canonical
@@ -93,7 +99,8 @@ export async function addUserWithInvite(payload) {
     email: normalizedEmail,
     role: roleNorm,
     workspaceIds: safeWorkspaceIds,
-    collaboratorPerms: roleNorm === "collaborator" ? (collaboratorPerms || DEFAULT_COLLAB_PERMS) : null,
+    collaboratorPerms:
+      roleNorm === "collaborator" ? (collaboratorPerms || DEFAULT_COLLAB_PERMS) : null,
     status: "pending",
     createdAt: serverTimestamp(),
     createdBy,
@@ -110,7 +117,7 @@ export async function addUserWithInvite(payload) {
  * @param {{
  *  name?: string,
  *  email?: string,
- *  role?: "owner"|"staff"|"collaborator",
+ *  role?: "owner"|"admin"|"staff"|"client"|"collaborator", // "owner" will be coerced to "admin"
  *  workspaceIds?: string[],
  *  collaboratorPerms?: {content?:boolean,audits?:boolean,reports?:boolean}|null
  * }} changes
@@ -124,7 +131,7 @@ export async function updateUserBasic(docId, changes) {
 
   if (changes.name != null) patch.name = String(changes.name).trim();
   if (changes.email != null) patch.email = String(changes.email).trim().toLowerCase();
-  if (changes.role != null) patch.role = normalizeRole(changes.role);
+  if (changes.role != null) patch.role = normalizeRole(changes.role); // 🔒 guard
 
   if (Array.isArray(changes.workspaceIds)) {
     patch.workspaceIds = changes.workspaceIds.map(String); // full replace
@@ -152,7 +159,7 @@ export async function updateUserBasic(docId, changes) {
  * @param {{
  *  uid?: string,        // optional; not used for doc id
  *  email: string,
- *  role: "owner"|"staff"|"collaborator",
+ *  role: "owner"|"admin"|"staff"|"client"|"collaborator", // "owner" will be coerced to "admin"
  *  workspaceIds?: string[],
  *  collaboratorPerms?: {content?:boolean,audits?:boolean,reports?:boolean}|null
  * }} args
@@ -165,7 +172,7 @@ export async function fulfillInviteOnFirstLogin({
   collaboratorPerms = null,
 }) {
   const normalizedEmail = String(email || "").trim().toLowerCase();
-  const roleNorm = normalizeRole(role);
+  const roleNorm = normalizeRole(role); // 🔒 guard
   const safeWorkspaceIds = Array.isArray(workspaceIds) ? workspaceIds.map(String) : [];
 
   const baseData = {
