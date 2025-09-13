@@ -3,6 +3,7 @@ import React, { useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { CalendarDays, CheckCircle2, AlertCircle, Upload, ArrowRight } from "lucide-react";
 import { useAuth } from "../../hooks/useAuth";
+import { useWorkspace } from "../../context/WorkspaceContext";
 
 // Export for detail header reuse
 export const mockAuditsIndex = [
@@ -12,6 +13,7 @@ export const mockAuditsIndex = [
     totals: { total: 18, completed: 18, highPriority: 0 } },
 ];
 
+const { activeWorkspaceId, activeWorkspace } = useWorkspace();
 const statusPill = (status) =>
   status === "completed" ? (
     <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">
