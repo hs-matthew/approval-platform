@@ -29,8 +29,8 @@ import AuditsList from "./pages/Audits/AuditsList";
 import AuditDetail from "./pages/Audits/AuditDetail";
 
 // (Optional) Profile/Login pages if you have them
-import Profile from "./pages/Profile/Profile";                      // if not created yet, stub it
-import Login from "./pages/Auth/Login";                             // if not created yet, stub it
+//import Profile from "./pages/Profile/Profile";                      if not created yet, stub it
+//import Login from "./pages/Auth/Login";                             if not created yet, stub it
 
 function App() {
   // ✅ Keep ApprovalPlatform as the default export for index.js to render
