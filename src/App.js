@@ -139,8 +139,8 @@ export default function App() {
         />
 
         {/* Other placeholders */}
-      <Route path="/seo-reports" element={<ReportsList />} />
-      <Route path="/seo-reports/:id" element={<ReportDetail />} />
+      <Route path="/reports" element={<ReportsList />} />
+      <Route path="/reports/:id" element={<ReportDetail />} />
       <Route path="/audits" element={<AuditsList />} />
       <Route path="/audits/:id" element={<AuditDetail />} />
       </Route>
