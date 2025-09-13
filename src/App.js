@@ -7,7 +7,7 @@ import Navigation from "./components/layout/Navigation";
 import Footer from "./components/layout/Footer";
 
 // Context
-import { useWorkspace } from "./context/WorkspaceContext";
+import { WorkspaceProvider, useWorkspace } from "./context/WorkspaceContext";
 
 // Hooks
 import { useAuth } from "./hooks/useAuth";
@@ -15,29 +15,26 @@ import { useFirestore } from "./hooks/useFirestore";
 import { useSubmissions } from "./hooks/useSubmissions";
 
 // Pages
-import Dashboard from "./pages/Dashboard/Dashboard";                // placeholder (simple skeleton ok)
-//import ContentPage from "./pages/Content/ContentPage";              
-import SubmitContent from "./pages/SubmitContent/SubmitContent";    
+import Dashboard from "./pages/Dashboard/Dashboard";
+import SubmitContent from "./pages/SubmitContent/SubmitContent";
 import ManageWorkspaces from "./pages/ManageWorkspaces/ManageWorkspaces";
 import ManageUsers from "./pages/ManageUsers/ManageUsers";
 import ReviewSubmission from "./pages/ReviewSubmission/ReviewSubmission";
 
 import ReportsList from "./pages/Reports/ReportsList";
-import ReportDetail from "./pages/Reports/ReportDetail";            
+import ReportDetail from "./pages/Reports/ReportDetail";
 
 import AuditsList from "./pages/Audits/AuditsList";
 import AuditDetail from "./pages/Audits/AuditDetail";
 
-// (Optional) Profile/Login pages if you have them
-//import Profile from "./pages/Profile/Profile";                      if not created yet, stub it
-//import Login from "./pages/Auth/Login";                             if not created yet, stub it
+// ------------------------------------------------------------------
 
-function App() {
-  // ✅ Keep ApprovalPlatform as the default export for index.js to render
+export default function App() {
+  // ✅ Keep ApprovalPlatform as the default export
   return <ApprovalPlatform />;
 }
 
-const ApprovalPlatform = () => {
+function ApprovalPlatform() {
   const { currentUser } = useAuth();
 
   // Local UI state
@@ -60,9 +57,7 @@ const ApprovalPlatform = () => {
 
   const isLoading = usersLoading || workspacesLoading || submissionsLoading;
 
-  const handleSelectSubmission = (submission) => {
-    setSelectedSubmission(submission);
-  };
+  const handleSelectSubmission = (submission) => setSelectedSubmission(submission);
 
   const handleApprove = (id) => {
     updateSubmission(id, {
@@ -87,7 +82,8 @@ const ApprovalPlatform = () => {
   };
 
   return (
-    <WorkspaceProvider workspaces={workspaces}>
+    // ⬇️ Correct provider usage (no props)
+    <WorkspaceProvider>
       <div className="min-h-screen bg-gray-100">
         <Navigation currentUser={currentUser} />
 
@@ -125,12 +121,10 @@ const ApprovalPlatform = () => {
       </div>
     </WorkspaceProvider>
   );
-};
+}
 
-/**
- * Routes separated for clarity. Applies active workspace filtering before
- * passing data down to pages.
- */
+// ------------------------------------------------------------------
+// Routes (workspace-scoped)
 function MainRoutes(props) {
   const {
     currentUser,
@@ -152,18 +146,15 @@ function MainRoutes(props) {
     onAddWorkspace,
   } = props;
 
-  // 🟦 Global workspace selection (single source of truth)
+  // 🟦 Single source of truth for active workspace
   const { activeWorkspaceId } = useWorkspace();
 
-  // 🔎 Helper: filter lists by workspaceId (client-side)
+  // 🔎 Client-side workspace filter (keeps "all" working if you expose it in the nav)
   const byWorkspace = (list) =>
     activeWorkspaceId === "all"
-      ? list
-      : (list || []).filter(
-          (item) => String(item?.workspaceId) === String(activeWorkspaceId)
-        );
+      ? list || []
+      : (list || []).filter((item) => String(item?.workspaceId) === String(activeWorkspaceId));
 
-  // ✅ Apply once here
   const filteredSubmissions = byWorkspace(submissions);
 
   return (
@@ -171,41 +162,32 @@ function MainRoutes(props) {
       {/* Default redirect */}
       <Route path="/" element={<Navigate to="/dashboard" replace />} />
 
-      {/* Dashboard (placeholder) */}
+      {/* Dashboard */}
       <Route path="/dashboard" element={<Dashboard />} />
 
-      {/* Content (uses filtered submissions) */}
+      {/* Content index (simple placeholder list; replace with your actual Content page when ready) */}
       <Route
         path="/content"
         element={
-          <ContentPage
+          <ContentIndex
             submissions={filteredSubmissions}
             workspaces={workspaces}
             users={users}
             currentUser={currentUser}
             filterType={filterType}
             setFilterType={setFilterType}
-            onSelectSubmission={(s) => {
-              onSelectSubmission(s);
-              // (optional) navigate handled inside the page if needed
-            }}
+            onSelectSubmission={onSelectSubmission}
           />
         }
       />
 
-      {/* Submit Content (we pass currentUser/workspaces; if your form sets workspaceId internally, no change needed) */}
+      {/* Submit Content */}
       <Route
         path="/content/submit"
-        element={
-          <SubmitContent
-            workspaces={workspaces}
-            currentUser={currentUser}
-            onSubmit={addSubmission}
-          />
-        }
+        element={<SubmitContent workspaces={workspaces} currentUser={currentUser} onSubmit={addSubmission} />}
       />
 
-      {/* Review (kept as-is; if you later fetch by :id internally, this stays compatible) */}
+      {/* Review */}
       <Route
         path="/review/:id"
         element={
@@ -213,16 +195,12 @@ function MainRoutes(props) {
             submission={selectedSubmission}
             workspace={
               selectedSubmission
-                ? workspaces.find(
-                    (w) => String(w.id) === String(selectedSubmission.workspaceId)
-                  )
+                ? workspaces.find((w) => String(w.id) === String(selectedSubmission.workspaceId))
                 : null
             }
             author={
               selectedSubmission
-                ? users.find(
-                    (u) => String(u.id) === String(selectedSubmission.authorId)
-                  )
+                ? users.find((u) => String(u.id) === String(selectedSubmission.authorId))
                 : null
             }
             currentUser={currentUser}
@@ -234,44 +212,30 @@ function MainRoutes(props) {
         }
       />
 
-      {/* Reports + Report Detail (left untouched for now; they self-source data) */}
+      {/* Reports */}
       <Route path="/seo-reports" element={<ReportsList />} />
       <Route path="/seo-reports/:id" element={<ReportDetail />} />
 
-      {/* Audits + Audit Detail (left untouched for now; they self-source data) */}
+      {/* Audits */}
       <Route path="/audits" element={<AuditsList />} />
       <Route path="/audits/:id" element={<AuditDetail />} />
 
       {/* Admin */}
       <Route
         path="/users"
-        element={
-          <ManageUsers
-            users={users}
-            currentUser={currentUser}
-            onAddUser={onAddUser}
-          />
-        }
+        element={<ManageUsers users={users} currentUser={currentUser} onAddUser={onAddUser} />}
       />
       <Route
         path="/workspaces"
-        element={
-          <ManageWorkspaces
-            workspaces={workspaces}
-            currentUser={currentUser}
-            onAddWorkspace={onAddWorkspace}
-          />
-        }
+        element={<ManageWorkspaces workspaces={workspaces} currentUser={currentUser} onAddWorkspace={onAddWorkspace} />}
       />
 
-      {/* Profile / Auth */}
-      <Route path="/profile" element={<Profile currentUser={currentUser} />} />
-      <Route path="/login" element={<Login />} />
+      {/* Profile / Auth placeholders (replace with real pages when added) */}
+      <Route path="/profile" element={<ProfilePlaceholder currentUser={currentUser} />} />
+      <Route path="/login" element={<LoginPlaceholder />} />
 
       {/* Fallback */}
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
     </Routes>
   );
 }
-
-export default App;
