@@ -17,7 +17,7 @@ export default function AddUser() {
     setSubmitError("");
     try {
       await addUserWithInvite(userData); // writes users + invites (auto-ID, no memberships)
-      navigate("/users");
+      navigate("/invites");
     } catch (e) {
       console.error(e);
       setSubmitError("Failed to create user. Please try again.");
