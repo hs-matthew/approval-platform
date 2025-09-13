@@ -132,7 +132,7 @@ export default function InvitesList() {
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-4">
           <h1 className="text-xl font-semibold inline-flex items-center gap-2">
-+           <MailQuestion className="w-5 h-5" />
+           <MailQuestion className="w-5 h-5" />
            Invites
           </h1>
           <button
