@@ -2,22 +2,42 @@
 import React, { useMemo, useState } from "react";
 import { UserPlus, Users, Shield, Edit, Mail, AlertCircle, CheckCircle, CheckSquare, Building2 } from "lucide-react";
 
-// Are we editing an existing user?
-const isEdit = Boolean(initialValues && (initialValues.id || initialValues.email));
+const UserForm = ({
+  users = [],
+  workspaces = [],          // [{id, name}]
+  onAddUser = () => {},
+  onCancel = null,
+  className = "",
+  showTitle = true,
+  initialValues = null
+}) => {
+  // Helper to safely shape form data (used for both create and edit)
+  const normalize = (vals) => ({
+    name: vals?.name ?? "",
+    email: vals?.email ?? "",
+    role: vals?.role ?? "collaborator",
+    workspaceIds: Array.isArray(vals?.workspaceIds) ? vals.workspaceIds : [],
+    collaboratorPerms: vals?.collaboratorPerms ?? { content: true, audits: false, reports: false },
+  });
 
-// Normalize initial values (in case some fields are missing)
-const normalize = (vals) => ({
-  name: vals?.name ?? "",
-  email: vals?.email ?? "",
-  role: vals?.role ?? "collaborator",
-  workspaceIds: Array.isArray(vals?.workspaceIds) ? vals.workspaceIds : [],
-  collaboratorPerms: vals?.collaboratorPerms ?? { content: true, audits: false, reports: false },
-});
+  // Initialize form state (handles both create and edit)
+  const [formData, setFormData] = useState(() =>
+    initialValues ? normalize(initialValues) : normalize(null)
+  );
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [validationErrors, setValidationErrors] = useState({});
+  const [showSuccess, setShowSuccess] = useState(false);
 
-// If initialValues can change over time, keep form in sync
-React.useEffect(() => {
-  if (initialValues) setFormData(normalize(initialValues));
-}, [initialValues]);
+  // ✅ isEdit MUST be inside the component where initialValues is in scope
+  const isEdit = Boolean(initialValues && (initialValues.id || initialValues.email));
+
+  // If the parent loads initialValues async or changes them, keep the form in sync
+  React.useEffect(() => {
+    if (initialValues) setFormData(normalize(initialValues));
+  }, [initialValues]);
+
+  // (optional/no-op) quiet lints; list is passed in
+  useMemo(() => workspaces, [workspaces]);
 
 /* =========================
    Searchable Chips Multi-Select
