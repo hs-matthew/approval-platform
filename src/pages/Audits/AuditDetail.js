@@ -11,6 +11,8 @@ import {
   CalendarDays,
 } from "lucide-react";
 import { mockAuditsIndex } from "./AuditsList"; // reuse list metadata
+import { useWorkspace } from "../../context/WorkspaceContext";
+const { activeWorkspaceId, activeWorkspace } = useWorkspace();
 
 // --- Mock per-audit items (unchanged) ---
 const mockAuditData = [
