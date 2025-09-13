@@ -33,6 +33,7 @@ import {
   getDownloadURL,
 } from "firebase/storage";
 import { auth, db, storage } from "../../lib/firebase";
+import { useWorkspace } from "../../context/WorkspaceContext";
 
 /** Helper to convert a dataURL to a Blob */
 function dataURLtoBlob(dataURL) {
@@ -281,6 +282,15 @@ export default function UserProfile({ onUpdateProfile = async () => {} }) {
 
   const displayName = formData.name || user.displayName || "Your Name";
   const avatar = croppedImage || fsProfile?.photoURL || user.photoURL || null;
+  const { workspaces = [], loadingWorkspaces = false } = useWorkspace();
+
+const isAllAccess = ["owner", "admin"].includes((fsProfile?.role || "collaborator").toLowerCase());
+const assignedIds = Array.isArray(fsProfile?.workspaceIds) ? fsProfile.workspaceIds : [];
+
+const visibleWorkspaces = isAllAccess
+  ? workspaces
+  : workspaces.filter(w => assignedIds.includes(w.id));
+
 
   return (
     <div className="max-w-4xl mx-auto p-6 space-y-6">
@@ -576,6 +586,40 @@ export default function UserProfile({ onUpdateProfile = async () => {} }) {
           </div>
         )}
       </div>
+{/* Workspaces */}
+<div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+  <div className="flex items-center justify-between mb-4">
+    <h3 className="text-lg font-semibold text-gray-900">Workspaces</h3>
+    {isAllAccess && (
+      <span className="text-sm px-3 py-1 rounded-full bg-emerald-100 text-emerald-700 border border-emerald-200">
+        All workspaces
+      </span>
+    )}
+  </div>
+
+  {loadingWorkspaces ? (
+    <p className="text-gray-600 text-sm">Loading workspaces…</p>
+  ) : (
+    <>
+      {!isAllAccess && assignedIds.length === 0 ? (
+        <p className="text-gray-600 text-sm">No workspace assignments.</p>
+      ) : (
+        <ul className="flex flex-wrap gap-2">
+          {visibleWorkspaces.map((ws) => (
+            <li
+              key={ws.id}
+              className="px-3 py-1 text-sm rounded-full border bg-gray-50 text-gray-700"
+              title={ws.description || ""}
+            >
+              {ws.name || ws.title || ws.id}
+            </li>
+          ))}
+        </ul>
+      )}
+    </>
+  )}
+</div>
+
 
       {/* Image Crop Modal */}
       {showImageCrop && selectedImage && (
