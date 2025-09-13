@@ -52,7 +52,7 @@ export default function Users() {
   const navigate = useNavigate();
 
   // Load users and workspaces so we can show workspace names
-  const { data: users = [], loading: loadingUsers } = useFirestore("users");
+  const { data: users = [], loading: loadingUsers, reload: reloadUsers } = useFirestore("users");
   const { data: workspaces = [], loading: loadingWorkspaces } = useFirestore("workspaces");
 
   const [q, setQ] = useState("");
@@ -86,6 +86,7 @@ export default function Users() {
     if (!window.confirm(`Delete user "${email || id}"?`)) return;
     try {
       await deleteDoc(doc(db, "users", id));
+      await reloadUsers(); // force refresh list immediately
       // NOTE: This removes the user doc only. Handle related cleanup (memberships/auth) elsewhere if needed.
     } catch (e) {
       console.error(e);
