@@ -9,7 +9,7 @@ import SubmitContent from "./pages/SubmitContent/SubmitContent";
 import ManageWorkspaces from "./pages/ManageWorkspaces/ManageWorkspaces";
 import ManageUsers from "./pages/ManageUsers/ManageUsers";
 import ReviewRoute from "./pages/ReviewSubmission/ReviewRoute";
-import MonthlySEOReport from "./pages/Reports/MonthlySEOReport";
+import ReportDetail from "./pages/Reports/ReportDetail";
 import ReportsList from "./pages/Reports/ReportsList";
 import ProtectedLayout from "./components/layout/ProtectedLayout";
 import { useAuth } from "./hooks/useAuth";
@@ -140,7 +140,7 @@ export default function App() {
 
         {/* Other placeholders */}
       <Route path="/seo-reports" element={<ReportsList />} />
-      <Route path="/seo-reports/:id" element={<MonthlySEOReport />} />
+      <Route path="/seo-reports/:id" element={<ReportDetail />} />
       <Route path="/audits" element={<AuditsList />} />
       <Route path="/audits/:id" element={<AuditDetail />} />
       </Route>
