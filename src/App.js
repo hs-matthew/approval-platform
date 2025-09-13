@@ -165,21 +165,8 @@ function MainRoutes(props) {
       {/* Dashboard */}
       <Route path="/dashboard" element={<Dashboard />} />
 
-      {/* Content index (simple placeholder list; replace with your actual Content page when ready) */}
-      <Route
-        path="/content"
-        element={
-          <ContentIndex
-            submissions={filteredSubmissions}
-            workspaces={workspaces}
-            users={users}
-            currentUser={currentUser}
-            filterType={filterType}
-            setFilterType={setFilterType}
-            onSelectSubmission={onSelectSubmission}
-          />
-        }
-      />
+      {/* Content */}
+      <Route path="/content" element={<ReviewSubmission />} />
 
       {/* Submit Content */}
       <Route
