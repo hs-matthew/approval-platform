@@ -173,8 +173,8 @@ function WorkspaceMultiSelect({
 /* =========================
    Constants / helpers
    ========================= */
-const ROLES = ["owner", "admin", "staff", "client", "collaborator"]; // global roles
-const PERM_KEYS = ["content", "audits", "reports"];                  // per-workspace (for collaborators)
+const ROLES = ["owner", "staff", "collaborator"]; // global roles
+const PERM_KEYS = ["content", "audits", "reports"]; // global toggle for collaborators
 const cap = (s) => s.charAt(0).toUpperCase() + s.slice(1);
 
 /* =========================
@@ -188,42 +188,20 @@ const UserForm = ({
   className = "",
   showTitle = true,
   initialValues = null,
-   allowEmailEdit = false
+  allowEmailEdit = false
 }) => {
 
-// Helper to safely shape form data (used for both create and edit)
-const normalize = (vals) => {
-  let workspaceIds = [];
-  if (Array.isArray(vals?.workspaceIds)) {
-    workspaceIds = vals.workspaceIds;
-  } else if (vals?.memberships && typeof vals.memberships === "object") {
-    // Accept common shapes:
-    //  - boolean true
-    //  - string role ("collaborator", etc.)
-    //  - object with assigned !== false
-    workspaceIds = Object.entries(vals.memberships)
-      .filter(([_, v]) => {
-        if (v == null) return false;
-        if (typeof v === "boolean") return v;
-        if (typeof v === "string") return v.trim().length > 0;
-        if (typeof v === "object") return v.assigned !== false;
-        return false;
-      })
-      .map(([k]) => k);
-  }
-
-  // Force to strings to avoid identity issues
-  workspaceIds = (workspaceIds || []).map(String);
-
-  return {
-    name: vals?.name ?? "",
-    email: vals?.email ?? "",
-    role: vals?.role ?? "collaborator",
-    workspaceIds,
-    collaboratorPerms: vals?.collaboratorPerms ?? { content: true, audits: false, reports: false },
+  // Helper to safely shape form data (create & edit)
+  const normalize = (vals) => {
+    const ws = Array.isArray(vals?.workspaceIds) ? vals.workspaceIds.map(String) : [];
+    return {
+      name: vals?.name ?? "",
+      email: vals?.email ?? "",
+      role: vals?.role ?? "collaborator",
+      workspaceIds: ws,
+      collaboratorPerms: vals?.collaboratorPerms ?? { content: true, audits: false, reports: false },
+    };
   };
-};
-
 
   // Initialize form state (handles both create and edit)
   const [formData, setFormData] = useState(() =>
@@ -236,39 +214,10 @@ const normalize = (vals) => {
   // Are we editing an existing user?
   const isEdit = Boolean(initialValues && (initialValues.id || initialValues.email));
 
-  // If the parent loads initialValues async or changes them, keep the form in sync
+  // Keep the form in sync if parent updates initialValues
   React.useEffect(() => {
     if (initialValues) setFormData(normalize(initialValues));
   }, [initialValues]);
-
-// If we still have no chips after initialValues load, derive workspaceIds directly from memberships
-React.useEffect(() => {
-  if (!isEdit || !initialValues) return;
-  const hasChips = Array.isArray(formData.workspaceIds) && formData.workspaceIds.length > 0;
-  if (hasChips) return;
-
-  // derive again, but only for workspaceIds
-  let derived = [];
-  const m = initialValues.memberships;
-  if (m && typeof m === "object") {
-    derived = Object.entries(m)
-      .filter(([_, v]) => {
-        if (v == null) return false;
-        if (typeof v === "boolean") return v;
-        if (typeof v === "string") return v.trim().length > 0;
-        if (typeof v === "object") return v.assigned !== false;
-        return false;
-      })
-      .map(([k]) => String(k));
-  } else if (Array.isArray(initialValues.workspaceIds)) {
-    derived = initialValues.workspaceIds.map(String);
-  }
-
-  if (derived.length > 0) {
-    setFormData((prev) => ({ ...prev, workspaceIds: derived }));
-  }
-}, [isEdit, initialValues, formData.workspaceIds]);
-
 
   // quiet lints; list is passed in
   useMemo(() => workspaces, [workspaces]);
@@ -276,9 +225,7 @@ React.useEffect(() => {
   const getRoleIcon = (role) => {
     switch (role) {
       case "owner": return <Shield className="w-4 h-4" />;
-      case "admin": return <Shield className="w-4 h-4" />;
       case "staff": return <Users className="w-4 h-4" />;
-      case "client": return <Users className="w-4 h-4" />;
       case "collaborator": return <Edit className="w-4 h-4" />;
       default: return <Users className="w-4 h-4" />;
     }
@@ -286,10 +233,8 @@ React.useEffect(() => {
   const getRoleDescription = (role) => {
     switch (role) {
       case "owner": return "All permissions, including account deletion.";
-      case "admin": return "Full admin features across the app.";
-      case "staff": return "Internal team access.";
-      case "client": return "Can approve/view items in assigned workspaces.";
-      case "collaborator": return "Granular permissions per assigned workspace.";
+      case "staff": return "Internal team access across assigned workspaces.";
+      case "collaborator": return "Granular permissions for assigned workspaces.";
       default: return "";
     }
   };
@@ -318,28 +263,28 @@ React.useEffect(() => {
     else if (name.length < 2) e.name = "Name must be at least 2 characters";
     else if (name.length > 50) e.name = "Name must be < 50 characters";
 
-if (!email) {
-  e.email = "Email is required";
-} else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-  e.email = "Enter a valid email";
-} else {
-  // Only check for duplicates if creating OR if editing and email editing is enabled AND changed
-  const shouldCheckDup =
-    !isEdit ||
-    (allowEmailEdit && email !== (initialValues?.email || "").toLowerCase());
+    if (!email) {
+      e.email = "Email is required";
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      e.email = "Enter a valid email";
+    } else {
+      // Only check for duplicates if creating OR if editing and email editing is enabled AND changed
+      const shouldCheckDup =
+        !isEdit ||
+        (allowEmailEdit && email !== (initialValues?.email || "").toLowerCase());
 
-  if (shouldCheckDup) {
-    const duplicate = users.some(
-      (u) => (u.email || "").toLowerCase() === email && u.id !== initialValues?.id
-    );
-    if (duplicate) e.email = "A user with this email already exists";
-  }
-}
+      if (shouldCheckDup) {
+        const duplicate = users.some(
+          (u) => (u.email || "").toLowerCase() === email && u.id !== initialValues?.id
+        );
+        if (duplicate) e.email = "A user with this email already exists";
+      }
+    }
 
     if (!ROLES.includes(formData.role)) e.role = "Select a valid role";
 
-    // require at least one workspace for roles other than owner/admin
-    const requiresWorkspace = !["owner", "admin"].includes(formData.role);
+    // Require at least one workspace for non-owners
+    const requiresWorkspace = formData.role !== "owner";
     if (requiresWorkspace && formData.workspaceIds.length === 0) {
       e.workspaceIds = "Select at least one workspace";
     }
@@ -348,70 +293,51 @@ if (!email) {
     return Object.keys(e).length === 0;
   };
 
-const handleSubmit = async (e) => {
-  e.preventDefault();
-  if (!validate()) return;
-  setIsSubmitting(true);
-  try {
-    // Build a base from current form fields
-    const base = {
-      name: formData.name.trim(),
-      email: formData.email.trim().toLowerCase(),
-      role: formData.role,
-      workspaceIds: formData.workspaceIds,
-      collaboratorPerms:
-        formData.role === "collaborator" ? formData.collaboratorPerms : null,
-    };
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!validate()) return;
+    setIsSubmitting(true);
+    try {
+      const payload = {
+        ...(initialValues || {}),
+        name: formData.name.trim(),
+        email: (
+          isEdit && !allowEmailEdit
+            ? (initialValues?.email || "")
+            : formData.email
+        ).trim().toLowerCase(),
+        role: formData.role,
+        workspaceIds: (formData.workspaceIds || []).map(String), // ← canonical
+        collaboratorPerms:
+          formData.role === "collaborator" ? formData.collaboratorPerms : null,
+        createdAt: initialValues?.createdAt ?? new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        isActive: initialValues?.isActive ?? true,
+        lastLogin: initialValues?.lastLogin ?? null,
+        createdBy: initialValues?.createdBy ?? "system",
+        id: initialValues?.id ?? undefined,
+      };
 
-    // Prevent email changes in edit mode unless explicitly allowed
-    if (isEdit && !allowEmailEdit) {
-      base.email = (initialValues?.email || "").toLowerCase();
+      await onAddUser(payload); // or onUpdateUser(payload) if you split handlers
+
+      if (isEdit) {
+        setValidationErrors({});
+        setShowSuccess(true);
+        setTimeout(() => setShowSuccess(false), 2500);
+      } else {
+        // Reset after create
+        setFormData(normalize(null));
+        setValidationErrors({});
+        setShowSuccess(true);
+        setTimeout(() => setShowSuccess(false), 3000);
+      }
+    } catch (err) {
+      console.error(err);
+      setValidationErrors({ submit: "Failed to save user. Please try again." });
+    } finally {
+      setIsSubmitting(false);
     }
-
-    // --- Build memberships from selected workspaceIds (single declaration) ---
-    const nextMemberships = Object.fromEntries(
-      (formData.workspaceIds || []).map((id) => [String(id), { assigned: true }])
-    );
-
-     const nextWorkspaceIds = (formData.workspaceIds || []).map(String);
-     
-    // --- Final payload ---
-const payload = {
-  ...(initialValues || {}),
-  name: formData.name.trim(),
-  email: (isEdit && !allowEmailEdit ? (initialValues?.email || "") : formData.email).trim().toLowerCase(),
-  role: formData.role,
-  workspaceIds: nextWorkspaceIds,       // ← always an array (possibly empty)
-  memberships: nextMemberships,         // ← always an object (possibly empty)
-  collaboratorPerms: formData.role === "collaborator" ? formData.collaboratorPerms : null,
-  createdAt: initialValues?.createdAt ?? new Date().toISOString(),
-  updatedAt: new Date().toISOString(),
-  isActive: initialValues?.isActive ?? true,
-  lastLogin: initialValues?.lastLogin ?? null,
-  createdBy: initialValues?.createdBy ?? "system",
-  id: initialValues?.id ?? undefined,
-};
-
-    await onAddUser(payload); // or onUpdateUser(payload) if you split handlers
-
-    if (isEdit) {
-      setValidationErrors({});
-      setShowSuccess(true);
-      setTimeout(() => setShowSuccess(false), 2500);
-    } else {
-      // Reset after create
-      setFormData(normalize(null));
-      setValidationErrors({});
-      setShowSuccess(true);
-      setTimeout(() => setShowSuccess(false), 3000);
-    }
-  } catch (err) {
-    console.error(err);
-    setValidationErrors({ submit: "Failed to save user. Please try again." });
-  } finally {
-    setIsSubmitting(false);
-  }
-};
+  };
 
   return (
     <div className={`bg-white rounded-lg shadow-sm border border-gray-200 p-6 ${className}`}>
@@ -473,27 +399,27 @@ const payload = {
         </div>
 
         {/* Email */}
-<div>
-  <label className="block text-sm font-medium text-gray-700 mb-2">Email Address *</label>
-  <input
-    type="email"
-    value={formData.email}
-    onChange={(e) => handleInput("email", e.target.value)}
-    className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 ${
-      validationErrors.email ? "border-red-300 focus:ring-red-500" : "border-gray-300 focus:ring-blue-500"
-    } ${isEdit && !allowEmailEdit ? "bg-gray-50 cursor-not-allowed" : ""}`}
-    disabled={isEdit && !allowEmailEdit || isSubmitting}
-    placeholder="user@company.com"
-  />
-  {isEdit && !allowEmailEdit && (
-    <p className="mt-1 text-xs text-gray-500">
-      Email is locked after account creation to prevent duplicates. Contact an admin if it must change.
-    </p>
-  )}
-  {validationErrors.email && <p className="mt-1 text-sm text-red-600">{validationErrors.email}</p>}
-</div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Email Address *</label>
+          <input
+            type="email"
+            value={formData.email}
+            onChange={(e) => handleInput("email", e.target.value)}
+            className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 ${
+              validationErrors.email ? "border-red-300 focus:ring-red-500" : "border-gray-300 focus:ring-blue-500"
+            } ${isEdit && !allowEmailEdit ? "bg-gray-50 cursor-not-allowed" : ""}`}
+            disabled={isEdit && !allowEmailEdit || isSubmitting}
+            placeholder="user@company.com"
+          />
+          {isEdit && !allowEmailEdit && (
+            <p className="mt-1 text-xs text-gray-500">
+              Email is locked after account creation to prevent duplicates. Contact an admin if it must change.
+            </p>
+          )}
+          {validationErrors.email && <p className="mt-1 text-sm text-red-600">{validationErrors.email}</p>}
+        </div>
 
-        {/* Global Role (capitalized options) */}
+        {/* Global Role */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">User Role *</label>
           <select
@@ -517,10 +443,7 @@ const payload = {
           </div>
           {validationErrors.role && <p className="mt-1 text-sm text-red-600">{validationErrors.role}</p>}
         </div>
-{/* DEBUG */}
-{/* <pre className="text-xs text-gray-500 mb-2">
-  chips: {JSON.stringify(formData.workspaceIds)}
-</pre> */}
+
         {/* Workspaces (searchable multi-select with chips) */}
         <div>
           <WorkspaceMultiSelect
@@ -529,7 +452,7 @@ const payload = {
             onChange={(ids) => handleInput("workspaceIds", ids)}
             disabled={isSubmitting}
             label="Assign Workspaces"
-            required={!["owner", "admin"].includes(formData.role)}
+            required={formData.role !== "owner"}
             error={validationErrors.workspaceIds || ""}
             placeholder="Type to search…"
           />
