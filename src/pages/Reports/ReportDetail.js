@@ -165,7 +165,7 @@ export default function ReportDetail() {
         {/* Back link */}
   <div className="mb-4">
     <Link
-      to="/seo-reports"
+      to="/reports"
       className="inline-flex items-center text-blue-600 hover:text-blue-800 text-sm font-medium"
     >
       <ArrowLeft className="w-4 h-4 mr-1" />
