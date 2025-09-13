@@ -265,49 +265,53 @@ export default function MonthlySEOReport() {
 
         <div className="divide-y divide-gray-200">
           {reportData.tasks
-            .sort((a, b) => new Date(b.dateCompleted) - new Date(a.dateCompleted))
-            .map((task) => (
-              <div key={task.id} className="p-6">
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2">
-                      <h3 className="font-medium text-gray-900">{task.task}</h3>
-                      <span
-                        className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium border ${deliverableColors[task.type]}`}
-                      >
-                        {deliverableIcons[task.deliverableType]}
-                        {task.deliverableType}
-                      </span>
-                    </div>
+  .sort((a, b) => new Date(b.dateCompleted) - new Date(a.dateCompleted))
+  .map((task) => (
+    <div key={task.id} className="p-6 border-b border-gray-200 last:border-b-0">
+      <div className="flex items-stretch gap-6">
+        {/* Credits stat box */}
+        <div className="w-28 flex-shrink-0 bg-gray-50 border border-gray-200 rounded-lg flex flex-col justify-center items-center">
+          <div className="text-2xl font-bold text-blue-700">{task.credits}</div>
+          <div className="text-xs text-gray-500">Credits</div>
+        </div>
 
-                    <p className="text-sm text-gray-600 mb-3">{task.description}</p>
+        {/* Task details */}
+        <div className="flex-1">
+          <div className="flex items-center gap-3 mb-2">
+            <h3 className="font-medium text-gray-900">{task.task}</h3>
+            <span
+              className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium border ${deliverableColors[task.type]}`}
+            >
+              {deliverableIcons[task.deliverableType]}
+              {task.deliverableType}
+            </span>
+          </div>
 
-                    <div className="flex items-center gap-4 text-sm text-gray-500">
-                      <div className="flex items-center gap-1">
-                        <Calendar className="w-4 h-4" />
-                        Completed: {new Date(task.dateCompleted).toLocaleDateString()}
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <BarChart3 className="w-4 h-4" />
-                        {task.credits} credits
-                      </div>
-                    </div>
-                  </div>
+          <p className="text-sm text-gray-600 mb-3">{task.description}</p>
 
-                  <div className="flex-shrink-0">
-                    <a
-                      href={task.deliverableLink}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-2 bg-blue-600 text-white px-3 py-2 rounded-md text-sm hover:bg-blue-700 transition-colors"
-                    >
-                      <ExternalLink className="w-4 h-4" />
-                      View Deliverable
-                    </a>
-                  </div>
-                </div>
-              </div>
-            ))}
+          <div className="flex items-center gap-4 text-sm text-gray-500">
+            <div className="flex items-center gap-1">
+              <Calendar className="w-4 h-4" />
+              Completed: {new Date(task.dateCompleted).toLocaleDateString()}
+            </div>
+          </div>
+        </div>
+
+        {/* Deliverable link */}
+        <div className="flex-shrink-0 self-start">
+          <a
+            href={task.deliverableLink}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 font-medium text-sm"
+          >
+            View Deliverable
+            <ExternalLink className="w-4 h-4" />
+          </a>
+        </div>
+      </div>
+    </div>
+  ))}
         </div>
       </div>
 
