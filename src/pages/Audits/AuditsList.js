@@ -49,37 +49,38 @@ export default function AuditsList() {
     }
   };
 
-  return (
-    <div className="max-w-6xl mx-auto p-6">
-{/* Header */}
-<div className="flex items-center justify-between mb-6">
-  {/* Left: Title + description */}
-  <div>
-    <h1 className="text-3xl font-extrabold text-gray-900">Technical SEO Audits</h1>
-    <p className="text-gray-600">
-      Review technical issues and track implementation progress
-    </p>
-  </div>
+return (
+  <div className="max-w-6xl mx-auto p-6">
+    {/* Header */}
+    <div className="flex items-center justify-between mb-6">
+      {/* Left: Title + description */}
+      <div>
+        <h1 className="text-3xl font-extrabold text-gray-900">Technical SEO Audits</h1>
+        <p className="text-gray-600">
+          Review technical issues and track implementation progress
+        </p>
+      </div>
 
-{/* Right: Import CSV + Active Audits */}
-<div className="flex items-center gap-4">
-  {/* Admin-only Import CSV */}
-  {isAdmin && (
-    <button
-      onClick={() => setShowImport(true)}
-      className="inline-flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-md text-sm hover:bg-blue-700"
-    >
-      <Upload className="w-4 h-4" />
-      Import Audit CSV
-    </button>
-  )}
+      {/* Right: Import CSV + Active Audits */}
+      <div className="flex items-center gap-4">
+        {/* Admin-only Import CSV */}
+        {isAdmin && (
+          <button
+            onClick={() => setShowImport(true)}
+            className="inline-flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-md text-sm hover:bg-blue-700"
+          >
+            <Upload className="w-4 h-4" />
+            Import Audit CSV
+          </button>
+        )}
 
-  {/* Active Audits Stat Card */}
-  <div className="bg-white border border-gray-200 rounded-md shadow-sm px-4 py-2 text-center">
-    <div className="text-xs font-medium text-gray-600">Active Audits</div>
-    <div className="text-lg font-bold text-blue-600">{activeCount}</div>
-  </div>
-</div>
+        {/* Active Audits Stat Card */}
+        <div className="bg-white border border-gray-200 rounded-md shadow-sm px-4 py-2 text-center">
+          <div className="text-xs font-medium text-gray-600">Active Audits</div>
+          <div className="text-lg font-bold text-blue-600">{activeCount}</div>
+        </div>
+      </div>
+    </div>
 
       {/* Cards */}
       <div className="space-y-5">
