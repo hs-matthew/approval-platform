@@ -41,7 +41,7 @@ const statusPill = (status) =>
     </span>
   );
 
-export default function AuditsList() {
+export function AuditsList() {
   const navigate = useNavigate();
   const { currentUser } = useAuth();
   const [showImport, setShowImport] = useState(false);
