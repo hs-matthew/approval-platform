@@ -2,6 +2,8 @@
 import React, { useEffect, useState } from 'react';
 import { auth } from '../../lib/firebase';
 import { FileText, Clock, Check, X, Filter, Edit, Eye, MessageSquare } from 'lucide-react';
+import { useWorkspace } from "../../context/WorkspaceContext";
+const { activeWorkspaceId, activeWorkspace } = useWorkspace();
 
 export default function ContentPage({ 
   submissions, 
