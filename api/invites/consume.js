@@ -1,59 +1,79 @@
 // /api/invites/consume.js
-import "./_firebaseAdmin.js"; // <-- fixed path to your admin init
+export const config = { runtime: "nodejs" };
+
+import "./_firebaseAdmin.js"; // initializes Firebase Admin
+import crypto from "crypto";
 import { getFirestore, FieldValue } from "firebase-admin/firestore";
+
+function sha256(s) {
+  return crypto.createHash("sha256").update(s).digest("hex");
+}
 
 export default async function handler(req, res) {
   try {
-    if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
+    if (req.method !== "POST") {
+      res.setHeader("Allow", ["POST"]);
+      return res.status(405).json({ ok: false, reason: "method_not_allowed" });
+    }
 
-    const { inviteId, token, softDelete = false } = req.body || {};
-    if (!inviteId && !token) return res.status(400).json({ error: "inviteId or token required" });
+    const { inviteId, token, softDelete = true } = req.body || {};
+    if (!inviteId && !token) {
+      return res.status(400).json({ ok: false, reason: "missing_params" });
+    }
 
     const db = getFirestore();
 
-    // Resolve the invite doc
-    let ref, snap;
+    // ---- Locate invite by ID first, then by tokenHash (to mirror validate.js)
+    let ref = null;
+    let data = null;
+
     if (inviteId) {
-      ref = db.collection("invites").doc(inviteId);
-      snap = await ref.get();
-    } else {
-      const q = await db.collection("invites").where("token", "==", token).limit(1).get();
-      if (q.empty) return res.status(404).json({ error: "Invite not found" });
-      ref = q.docs[0].ref;
-      snap = q.docs[0];
+      const snapById = await db.collection("invites").doc(String(inviteId)).get();
+      if (snapById.exists) {
+        ref = snapById.ref;
+        data = snapById.data();
+      }
     }
 
-    if (!snap.exists) return res.status(404).json({ error: "Invite not found" });
-
-    const inv = snap.data();
-
-    // Validate status / used / expiry (all optional/defensive)
-    if (inv.used === true || (inv.status && inv.status !== "pending")) {
-      return res.status(400).json({ error: "Invite already used or not pending" });
-    }
-    if (inv.expiresAt?.toMillis && inv.expiresAt.toMillis() < Date.now()) {
-      return res.status(400).json({ error: "Invite expired" });
+    if (!ref && token) {
+      const tokenHash = sha256(String(token));
+      const q = await db.collection("invites").where("tokenHash", "==", tokenHash).limit(1).get();
+      if (!q.empty) {
+        ref = q.docs[0].ref;
+        data = q.docs[0].data();
+      }
     }
 
-    // TODO: upsert the user here if you haven't already (optional):
-    // const userId = inv.userId || inv.email;
-    // await db.collection("users").doc(userId).set(
-    //   { name: inv.name || "", email: inv.email, role: inv.role || "collaborator", workspaceIds: inv.workspaceIds || [], acceptedAt: FieldValue.serverTimestamp() },
-    //   { merge: true }
-    // );
+    if (!ref) {
+      return res.status(404).json({ ok: false, reason: "not_found" });
+    }
 
-    // Remove the invite so it disappears from the UI
+    // ---- Guards (idempotent behavior)
+    const now = Date.now();
+    const isExpired = data?.expiresAt?.toMillis && data.expiresAt.toMillis() < now;
+
+    if (data?.used === true || (data?.status && data.status !== "pending")) {
+      // Treat re-consume as success so UI doesn't error on double-click/refresh
+      return res.status(200).json({ ok: true, alreadyUsed: true });
+    }
+
+    if (isExpired) {
+      return res.status(410).json({ ok: false, reason: "expired" });
+    }
+
+    // ---- Consume: soft-delete by default; hard delete if requested
     if (softDelete) {
-      // mark accepted (UI should filter these out)
-      await ref.update({ status: "accepted", used: true, usedAt: FieldValue.serverTimestamp() });
+      await ref.set(
+        { used: true, status: "accepted", usedAt: FieldValue.serverTimestamp() },
+        { merge: true }
+      );
     } else {
-      // hard delete
       await ref.delete();
     }
 
     return res.status(200).json({ ok: true });
   } catch (e) {
     console.error("INVITE_CONSUME", e);
-    return res.status(400).json({ error: e.message || "Failed to consume invite" });
+    return res.status(500).json({ ok: false, reason: "server_error", message: e?.message || "Failed to consume invite" });
   }
 }
