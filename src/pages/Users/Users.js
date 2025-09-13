@@ -43,7 +43,7 @@ function RoleBadge({ role }) {
   };
   return (
     <span className={`px-2 py-0.5 rounded text-xs font-semibold ${map[r] || "bg-gray-100 text-gray-700"}`}>
-      {r ? cap(r) : "—"}
+      {r ? r.charAt(0).toUpperCase() + r.slice(1) : "—"}
     </span>
   );
 }
