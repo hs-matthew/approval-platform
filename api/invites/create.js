@@ -1,6 +1,4 @@
 // /api/invites/create.js
-export const config = { runtime: "nodejs18.x" };
-
 import crypto from "crypto";
 import { Timestamp } from "firebase-admin/firestore";
 import { db } from "../_firebaseAdmin.js";
