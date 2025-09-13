@@ -183,10 +183,8 @@ export default function InvitesList() {
         <table className="w-full text-sm">
           <thead className="bg-gray-50 border-b">
             <tr className="text-left">
-              <th className="px-4 py-2">Email</th>
               <th className="px-4 py-2">Name</th>
               <th className="px-4 py-2">Role</th>
-              <th className="px-4 py-2">Workspaces</th>
               <th className="px-4 py-2">Status</th>
               <th className="px-4 py-2">Sent</th>
               <th className="px-4 py-2">Expires</th>
@@ -196,38 +194,23 @@ export default function InvitesList() {
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={8} className="px-4 py-6 text-center text-gray-500">Loading…</td>
+                <td colSpan={6} className="px-4 py-6 text-center text-gray-500">Loading…</td>
               </tr>
             ) : filtered.length === 0 ? (
               <tr>
-                <td colSpan={8} className="px-4 py-6 text-center text-gray-500">No invites found.</td>
+                <td colSpan={6} className="px-4 py-6 text-center text-gray-500">No invites found.</td>
               </tr>
             ) : (
               filtered.map((inv) => {
-                const wsNames = getWorkspaceNames(inv, workspaces);
                 const status = (inv.status || "pending").toLowerCase();
 
                 return (
                   <tr key={inv.id || inv.email} className="border-b last:border-none">
                     <td className="px-4 py-2">
-                      <div className="font-medium text-gray-900">{inv.email || "—"}</div>
-                      <div className="text-xs text-gray-500">{inv.id || ""}</div>
+                      <div className="font-medium text-gray-900">{inv.name || "—"}</div>
+                      <div className="text-xs text-gray-500">{inv.email || "—"}</div>
                     </td>
-                    <td className="px-4 py-2">{inv.name || "—"}</td>
                     <td className="px-4 py-2">{cap(inv.role) || "—"}</td>
-                    <td className="px-4 py-2">
-                      {wsNames.length === 0 ? (
-                        <span className="text-gray-500">—</span>
-                      ) : (
-                        <div className="flex flex-wrap gap-1">
-                          {wsNames.map((name, idx) => (
-                            <span key={`${inv.id || inv.email}-ws-${idx}`} className="px-2 py-0.5 rounded bg-gray-100 text-gray-700 text-xs">
-                              {name}
-                            </span>
-                          ))}
-                        </div>
-                      )}
-                    </td>
                     <td className="px-4 py-2">
                       <StatusBadge status={status} />
                     </td>
