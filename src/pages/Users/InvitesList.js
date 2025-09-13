@@ -8,7 +8,7 @@ import {
   updateDoc,
   serverTimestamp,
 } from "firebase/firestore";
-import { Search, Mail, MailQuestion, RefreshCw, XCircle } from "lucide-react";
+import { Search, Plus, MailQuestion, RefreshCw, XCircle } from "lucide-react";
 
 /* ---------- helpers ---------- */
 const cap = (s) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : "");
