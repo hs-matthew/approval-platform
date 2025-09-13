@@ -528,7 +528,6 @@ const UserForm = ({
               isSubmitting ? "bg-gray-400" : "bg-blue-600 hover:bg-blue-700"
             }`}
           >
-              <UserPlus className="w-4 h-4" />
             <Mail className="w-4 h-4" />
             {isSubmitting ? (isEdit ? "Saving…" : "Creating…") : (isEdit ? "Save Changes" : "Send Invite")}
           </button>
