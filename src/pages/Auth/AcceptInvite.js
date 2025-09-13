@@ -126,6 +126,7 @@ export default function AcceptInvite() {
           isActive: true,
           createdByInvite: true,
           createdAt: serverTimestamp(),
+          createdByFlow: "accept-invite", // test
           updatedAt: serverTimestamp(),
         },
         { merge: true }
