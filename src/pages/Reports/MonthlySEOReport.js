@@ -13,7 +13,7 @@ import {
   ArrowLeft,
   Globe,
 } from "lucide-react";
-import { useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { mockReportIndex } from "./ReportsList"; // named export
 
 // --- Mock monthly report data (kept ABOVE the component) ---
