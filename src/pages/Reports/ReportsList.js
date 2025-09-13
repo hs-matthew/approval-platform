@@ -1,7 +1,7 @@
 // src/pages/Reports/ReportsList.js
 import React from "react";
-import { useNavigate } from "react-router-dom";
-import { Calendar } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { Calendar, ExternalLink } from "lucide-react";
 
 // --- Mock list of monthly reports you have available ---
 export const mockReportIndex = [
@@ -82,76 +82,75 @@ export default function ReportsList() {
 
           return (
             <div
-              key={r.id}
-              className={`bg-white rounded-xl border ${
-                r.isCurrent ? "border-blue-300" : "border-gray-200"
-              } shadow-sm`}
-            >
-              <div className="p-5">
-                {/* Top row */}
-                <div className="flex items-center justify-between">
-                  <div className="text-xl font-semibold text-gray-900">
-                    {r.monthLabel}
-                  </div>
-                  <div className="flex items-center gap-3">
-                    {r.isCurrent && (
-                      <span className="px-3 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-700">
-                        Current
-                      </span>
-                    )}
-                    <div className="text-sm font-semibold text-gray-900">
-                      {utilization}%
-                    </div>
-                  </div>
-                </div>
+  key={r.id}
+  className={`bg-white rounded-xl border ${
+    r.isCurrent ? "border-blue-300" : "border-gray-200"
+  } shadow-sm`}
+>
+  <div className="p-5 flex flex-col h-full">
+    {/* Top row */}
+    <div className="flex items-center justify-between">
+      <div className="text-xl font-semibold text-gray-900">
+        {r.monthLabel}
+      </div>
+      <div className="flex items-center gap-3">
+        {r.isCurrent && (
+          <span className="px-3 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-700">
+            Current
+          </span>
+        )}
+        <div className="text-sm font-semibold text-gray-900">
+          {utilization}%
+        </div>
+      </div>
+    </div>
 
-                {/* Utilization bar */}
-                <div className="mt-3">
-                  <div className={`w-full ${barTrack} h-2 rounded-full`}>
-                    <div
-                      className={`${barColor} h-2 rounded-full transition-all`}
-                      style={{ width: `${utilization}%` }}
-                    />
-                  </div>
-                </div>
+    {/* Utilization bar */}
+    <div className="mt-3">
+      <div className={`w-full ${barTrack} h-2 rounded-full`}>
+        <div
+          className={`${barColor} h-2 rounded-full transition-all`}
+          style={{ width: `${utilization}%` }}
+        />
+      </div>
+    </div>
 
-                {/* Stats row */}
-                <div className="mt-5 grid grid-cols-3 gap-4 items-center">
-                  <div className="text-center">
-                    <div className="text-3xl font-bold text-gray-900">
-                      {r.deliverables}
-                    </div>
-                    <div className="text-xs text-gray-500 mt-1">Deliverables</div>
-                  </div>
+    {/* Centered stats */}
+    <div className="mt-5 flex justify-center gap-12 text-center">
+      <div>
+        <div className="text-3xl font-bold text-gray-900">{r.deliverables}</div>
+        <div className="text-xs text-gray-500 mt-1">Deliverables</div>
+      </div>
+      <div>
+        <div className="text-3xl font-bold text-blue-700">{r.usedCredits}</div>
+        <div className="text-xs text-gray-500 mt-1">Credits Used</div>
+      </div>
+    </div>
 
-                  <div className="text-center">
-                    <div className="text-3xl font-bold text-blue-700">
-                      {r.usedCredits}
-                    </div>
-                    <div className="text-xs text-gray-500 mt-1">Credits Used</div>
-                  </div>
+    {/* Date */}
+    <div className="mt-4 flex items-center gap-2 text-sm text-gray-500">
+      <Calendar className="w-4 h-4" />
+      {new Date(r.lastUpdated).toLocaleDateString(undefined, {
+        month: "short",
+        day: "2-digit",
+        year: "numeric",
+      })}
+    </div>
 
-                  <div className="flex items-center justify-end">
-                    <button
-                      onClick={() => navigate(`/seo-reports/${r.id}`)}
-                      className="text-blue-600 hover:text-blue-700 font-medium"
-                    >
-                      View Report&nbsp;↗
-                    </button>
-                  </div>
-                </div>
+    {/* Footer link pinned at bottom-right */}
+    <div className="mt-4 flex justify-end">
+  <Link
+    to={`/seo-reports/${r.id}`}
+    className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 font-medium text-sm"
+    aria-label={`View report for ${r.monthLabel}`}
+  >
+    View Report
+    <ExternalLink className="w-4 h-4" />
+  </Link>
+    </div>
+  </div>
+</div>
 
-                {/* Footer row */}
-                <div className="mt-4 flex items-center gap-2 text-sm text-gray-500">
-                  <Calendar className="w-4 h-4" />
-                  {new Date(r.lastUpdated).toLocaleDateString(undefined, {
-                    month: "short",
-                    day: "2-digit",
-                    year: "numeric",
-                  })}
-                </div>
-              </div>
-            </div>
           );
         })}
       </div>
