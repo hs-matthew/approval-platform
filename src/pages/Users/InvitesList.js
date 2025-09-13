@@ -65,7 +65,13 @@ export default function InvitesList() {
   const filtered = useMemo(() => {
     const needle = q.trim().toLowerCase();
     let list = invites;
-    if (showPendingOnly) list = list.filter((i) => (i.status || "pending").toLowerCase() === "pending");
+    // Always hide accepted invites
+    list = list.filter((i) => (i.status || "pending").toLowerCase() !== "accepted");
+
+    // Optional: keep the toggle for showing only pending
+    if (showPendingOnly) {
+      list = list.filter((i) => (i.status || "pending").toLowerCase() === "pending");
+    }
 
     if (!needle) return list;
 
