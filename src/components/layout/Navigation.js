@@ -71,8 +71,8 @@ export default function Navigation({ currentUser }) {
       <NavLink to="/audits" className={({ isActive }) => `${linkBase} ${isActive ? active : inactive}`} onClick={onClick}>
         Audits
       </NavLink>
-      <NavLink to="/seo-reports" className={({ isActive }) => `${linkBase} ${isActive ? active : inactive}`} onClick={onClick}>
-        SEO Reports
+      <NavLink to="/reports" className={({ isActive }) => `${linkBase} ${isActive ? active : inactive}`} onClick={onClick}>
+        Reports
       </NavLink>
     </>
   );
