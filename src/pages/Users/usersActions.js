@@ -1,13 +1,12 @@
-// src/pages/Users/usersActions.js
 import { addDoc, collection, doc, serverTimestamp, setDoc, updateDoc } from "firebase/firestore";
 import { db, auth } from "../../lib/firebase";
 
-// Keep email-as-id if you like; swap to addDoc if you prefer auto IDs
+// If you key users by email-as-id, keep this. If you use auto IDs, ignore it.
 export const userIdFromEmail = (email) =>
   (email || "").toLowerCase().replace(/[^a-z0-9]/g, "_");
 
 /**
- * Creates/updates a user record for admin UI and creates an invite.
+ * Create/update a user admin-record and create an invite capturing workspace assignments.
  * payload: { name, email, role, workspaceIds: string[], collaboratorPerms?: {content,audits,reports} }
  */
 export async function addUserWithInvite(payload) {
@@ -16,9 +15,7 @@ export async function addUserWithInvite(payload) {
   const createdBy = auth.currentUser?.uid || "system";
   const userDocId = userIdFromEmail(normalizedEmail);
 
-  // 1) Build memberships map for the admin UI copy (users/{id})
-  // For collaborators, attach the same perms to each assigned workspace.
-  // For other roles, perms are not needed (role implies capability).
+  // Build memberships map for admin UI record
   const memberships = {};
   workspaceIds.forEach((wid) => {
     memberships[wid] =
@@ -27,27 +24,27 @@ export async function addUserWithInvite(payload) {
         : { assigned: true };
   });
 
-  // 2) Upsert the user document used by your admin UI
+  // Upsert users admin-record
   await setDoc(
     doc(db, "users", userDocId),
     {
       name: (name || "").trim(),
       email: normalizedEmail,
-      role, // global
+      role, // global role
       isActive: true,
       lastLogin: null,
       createdAt: serverTimestamp(),
       createdBy,
-      memberships, // { [wid]: { assigned:true } | { permissions:{...} } }
+      memberships,
     },
     { merge: true }
   );
 
-  // 3) Create an invite capturing the workspace assignments + collaborator perms
+  // Create invite (fulfilled on first login)
   await addDoc(collection(db, "invites"), {
     email: normalizedEmail,
-    role,                 // global role at time of invite
-    workspaceIds,         // array
+    role,                 // global role at invite time
+    workspaceIds,         // array of workspace IDs
     collaboratorPerms,    // null unless collaborator
     status: "pending",
     createdAt: serverTimestamp(),
@@ -56,18 +53,49 @@ export async function addUserWithInvite(payload) {
 }
 
 /**
- * (Later) When the invited person signs in:
- *  - Link auth.uid to each workspace's members map.
- *  - We store role globally, but include it in members for quick checks.
- *  - For collaborators, also copy permissions to each workspace member entry.
+ * Update basic user fields for the admin-record.
+ * docId: Firestore document id for users collection (e.g., email-as-id or auto-id you’re using in the list).
+ * changes: { name?, email?, role?, workspaceIds?, collaboratorPerms? }
  *
- * Example shape under workspaces/{wid}:
- *   members: {
- *     "<uid>": { role: "collaborator", permissions: { content:true, audits:false, reports:true } }
- *   }
+ * NOTE: This updates the admin-record only. If you also want to sync workspace membership
+ * objects under workspaces/{wid}.members.{uid}, do that in a separate flow (e.g., on first login
+ * using fulfillInviteOnFirstLogin, or an explicit "sync memberships" admin action).
+ */
+export async function updateUserBasic(docId, changes) {
+  const next = {};
+  if (changes.name != null) next.name = String(changes.name).trim();
+  if (changes.email != null) next.email = String(changes.email).trim().toLowerCase();
+  if (changes.role != null) next.role = String(changes.role);
+
+  // Optionally update memberships if provided (same shape as add)
+  if (Array.isArray(changes.workspaceIds)) {
+    const role = next.role || changes.role || "collaborator";
+    const memberships = {};
+    changes.workspaceIds.forEach((wid) => {
+      memberships[wid] =
+        role === "collaborator"
+          ? { permissions: { ...(changes.collaboratorPerms || {}) } }
+          : { assigned: true };
+    });
+    next.memberships = memberships;
+  }
+  if (changes.collaboratorPerms && !Array.isArray(changes.workspaceIds)) {
+    // If only perms changed and we already have memberships in the doc,
+    // the UI should read/merge per workspace. For simplicity we overwrite nothing here.
+    // (Add a more complex merge if you store perms per wid and allow editing them here.)
+  }
+
+  next.updatedAt = serverTimestamp();
+
+  await setDoc(doc(db, "users", docId), next, { merge: true });
+}
+
+/**
+ * Call this after first login (or via a backend) to link Auth UID to workspaces.
+ * Copies role + (if collaborator) permissions into each workspace’s members map,
+ * and mirrors memberships onto users/{uid} (canonical, keyed by real UID).
  */
 export async function fulfillInviteOnFirstLogin({ uid, email, role, workspaceIds = [], collaboratorPerms = null }) {
-  // Link each workspace
   for (const wid of workspaceIds) {
     await updateDoc(doc(db, "workspaces", wid), {
       [`members.${uid}`]:
@@ -77,7 +105,6 @@ export async function fulfillInviteOnFirstLogin({ uid, email, role, workspaceIds
     });
   }
 
-  // Mirror memberships onto the canonical users/{uid} doc (real UID)
   await setDoc(
     doc(db, "users", uid),
     {
