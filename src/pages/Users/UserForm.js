@@ -330,18 +330,37 @@ if (!email) {
 if (isEdit && !allowEmailEdit) {
   base.email = (initialValues?.email || "").toLowerCase();
 }
-      // Preserve existing record fields if editing; set createdAt only on create; always set updatedAt
-      const payload = {
-        ...(initialValues || {}),                 // keep existing fields like id, createdAt, createdBy, etc.
-        ...base,                                  // override with latest form values
-        createdAt: initialValues?.createdAt ?? new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        isActive: initialValues?.isActive ?? true,
-        lastLogin: initialValues?.lastLogin ?? null,
-        createdBy: initialValues?.createdBy ?? "system",
-        id: initialValues?.id ?? undefined,       // include id if you have one
-      };
+// Preserve existing record fields if editing; set createdAt only on create; always set updatedAt
+// --- Build memberships from selected workspaceIds (merge-friendly) ---
+const existing = (initialValues?.memberships && typeof initialValues.memberships === "object")
+  ? { ...initialValues.memberships }
+  : {};
 
+// Start from existing, then:
+// 1) ensure all selected ids are present (preserve existing object if present, else { assigned: true })
+// 2) drop any ids that are no longer selected
+const selectedSet = new Set(formData.workspaceIds || []);
+const nextMemberships = {};
+
+// keep or create selected ones
+for (const id of selectedSet) {
+  const prev = existing[id];
+  nextMemberships[id] =
+    prev && typeof prev === "object" ? { ...prev, assigned: prev.assigned !== false } : { assigned: true };
+}
+
+// --- Final payload ---
+const payload = {
+  ...(initialValues || {}),                  // keep existing fields like id, createdAt, createdBy, etc.
+  ...base,                                   // override with latest form values (name, email, role, workspaceIds, perms)
+  memberships: nextMemberships,              // 👈 write normalized memberships shape
+  createdAt: initialValues?.createdAt ?? new Date().toISOString(),
+  updatedAt: new Date().toISOString(),
+  isActive: initialValues?.isActive ?? true,
+  lastLogin: initialValues?.lastLogin ?? null,
+  createdBy: initialValues?.createdBy ?? "system",
+  id: initialValues?.id ?? undefined,        // include id if you have one
+};
       await onAddUser(payload); // or onUpdateUser(payload) if you split handlers
 
       if (isEdit) {
