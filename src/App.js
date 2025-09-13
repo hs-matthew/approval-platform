@@ -10,7 +10,7 @@ import ManageWorkspaces from "./pages/ManageWorkspaces/ManageWorkspaces";
 import ManageUsers from "./pages/ManageUsers/ManageUsers";
 import ReviewRoute from "./pages/ReviewSubmission/ReviewRoute";
 import MonthlySEOReport from "./pages/Reports/MonthlySEOReport";
-
+import ReportsList from "./pages/Reports/ReportsList";
 import ProtectedLayout from "./components/layout/ProtectedLayout";
 import { useAuth } from "./hooks/useAuth";
 import { useFirestore } from "./hooks/useFirestore";
