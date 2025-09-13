@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { useFirestore } from "../../hooks/useFirestore";
 import { db } from "../../lib/firebase";
 import { doc, deleteDoc } from "firebase/firestore";
-import { Plus, Pencil, Trash2, Search } from "lucide-react";
+import { Plus, Pencil, Trash2, Search, MailQuestion } from "lucide-react";
 
 /* ---------- helpers ---------- */
 const cap = (s) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : "");
@@ -55,6 +55,13 @@ export default function Users() {
   const { data: users = [], loading: loadingUsers, reload: reloadUsers } = useFirestore("users");
   const { data: workspaces = [], loading: loadingWorkspaces } = useFirestore("workspaces");
 
+  // Load invites to show pending count
+const {
+data: invites = [],
+loading: loadingInvites,
+reload: reloadInvites, // available in case you want to force refresh after creating an invite elsewhere
+} = useFirestore("invites");
+  
   const [q, setQ] = useState("");
 
   const filtered = useMemo(() => {
@@ -78,6 +85,17 @@ export default function Users() {
     });
   }, [users, workspaces, q]);
 
+// Compute pending invites. Adjust logic to match your schema.
+const pendingInvites = useMemo(() => {
+return invites.filter((inv) => {
+const status = (inv.status || "pending").toLowerCase();
+// treat as pending if explicitly pending AND not accepted
+const notAccepted = !inv.acceptedAt && status !== "accepted";
+// optional: consider expiration if you store expiresAt
+return status === "pending" && notAccepted;
+});
+}, [invites]);
+  
   async function handleDelete(id, email) {
     if (!id) {
       alert("Missing user id.");
@@ -94,8 +112,8 @@ export default function Users() {
     }
   }
 
-  const loading = loadingUsers || loadingWorkspaces;
-
+const loading = loadingUsers || loadingWorkspaces || loadingInvites;
+  
   return (
     <div className="max-w-6xl mx-auto p-6">
       <div className="flex items-center justify-between mb-4">
@@ -106,6 +124,17 @@ export default function Users() {
         >
           <Plus className="w-4 h-4" /> Add User
         </button>
+            {/* Pending Invites button (only shows when there are any) */}
+{pendingInvites.length > 0 && (
+         <button
+            className="ml-2 inline-flex items-center gap-2 px-3 py-2 rounded-md bg-amber-600 text-white text-sm hover:bg-amber-700"
+            onClick={() => navigate("/invites")}
+            title="View pending invites"
+          >
+            <MailQuestion className="w-4 h-4" />
+            Pending Invites ({pendingInvites.length})
+          </button>
+        )}
       </div>
 
       <div className="flex items-center gap-3 mb-4">
