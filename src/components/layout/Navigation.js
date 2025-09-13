@@ -52,7 +52,7 @@ export default function Navigation({ currentUser }) {
       <NavLink to="/dashboard" onClick={onNavigate} className={({ isActive }) => `${linkBase} ${isActive ? active : inactive}`}>Dashboard</NavLink>
       <NavLink to="/content"   onClick={onNavigate} className={({ isActive }) => `${linkBase} ${isActive ? active : inactive}`}>Content</NavLink>
       <NavLink to="/audits"    onClick={onNavigate} className={({ isActive }) => `${linkBase} ${isActive ? active : inactive}`}>Audits</NavLink>
-      <NavLink to="/seo-reports" onClick={onNavigate} className={({ isActive }) => `${linkBase} ${isActive ? active : inactive}`}>Reports</NavLink>
+      <NavLink to="/reports" onClick={onNavigate} className={({ isActive }) => `${linkBase} ${isActive ? active : inactive}`}>Reports</NavLink>
     </>
   );
 
