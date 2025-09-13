@@ -130,19 +130,24 @@ export default function InvitesList() {
   return (
     <div className="max-w-6xl mx-auto p-6">
       <div className="flex items-center justify-between mb-4">
-        <h1 className="text-xl font-semibold inline-flex items-center gap-2">
-          <MailQuestion className="w-5 h-5" />
-          Invites
-        </h1>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-4">
+          <h1 className="text-xl font-semibold inline-flex items-center gap-2">
++           <MailQuestion className="w-5 h-5" />
+           Invites
+          </h1>
           <button
-            className="inline-flex items-center gap-2 px-3 py-2 rounded-md bg-blue-600 text-white text-sm hover:bg-blue-700"
-            onClick={() => navigate("/users/new")}
-            title="Create a new invite"
+            className="text-sm text-blue-600 hover:underline"
+            onClick={() => navigate("/users")}
           >
-            <Mail className="w-4 h-4" /> New Invite
+            ← Back to Users
           </button>
         </div>
+        <button
+          className="inline-flex items-center gap-2 px-3 py-2 rounded-md bg-blue-600 text-white text-sm hover:bg-blue-700"
+          onClick={() => navigate("/users/new")}
+        >
+          <Plus className="w-4 h-4" /> Add User
+        </button>
       </div>
 
       <div className="flex flex-wrap items-center gap-3 mb-4">
