@@ -1,7 +1,7 @@
 // src/pages/Audits/AuditsList.js
 import React, { useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { CalendarDays, CheckCircle2, AlertCircle, ExternalLink, Upload } from "lucide-react";
+import { CalendarDays, CheckCircle2, AlertCircle, ExternalLink, Upload, ArrowRight } from "lucide-react";
 import { useAuth } from "../../hooks/useAuth";
 
 // Export for detail header reuse
@@ -137,14 +137,14 @@ return (
                       />
                     </div>
                   </div>
-
-                  <button
-                    onClick={() => navigate(`/audits/${audit.id}`)}
-                    className="inline-flex items-center gap-2 bg-blue-600 text-white px-3 py-2 rounded-md text-sm hover:bg-blue-700"
-                  >
-                    <ExternalLink className="w-4 h-4" />
-                    View Details
-                  </button>
+  <Link
+    to={`/audits/${audit.id}`}
+    className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 font-medium text-sm"
+    aria-label={`View details for ${audit.name}`}
+  >
+    View Details
+    <ArrowRight className="w-4 h-4" />
+  </Link>
                 </div>
               </div>
             </div>
