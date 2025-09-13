@@ -81,7 +81,7 @@ export default function ReportsList() {
           const barTrack = "bg-gray-200";
 
           return (
-            <div
+<div
   key={r.id}
   className={`bg-white rounded-xl border ${
     r.isCurrent ? "border-blue-300" : "border-gray-200"
@@ -115,38 +115,39 @@ export default function ReportsList() {
       </div>
     </div>
 
-    {/* Centered stats */}
-    <div className="mt-5 flex justify-center gap-12 text-center">
+    {/* Stats row */}
+    <div className="mt-5 grid grid-cols-2 gap-6 text-center">
       <div>
-        <div className="text-3xl font-bold text-gray-900">{r.deliverables}</div>
+        <div className="text-3xl font-bold text-gray-900">
+          {r.deliverables}
+        </div>
         <div className="text-xs text-gray-500 mt-1">Deliverables</div>
       </div>
       <div>
-        <div className="text-3xl font-bold text-blue-700">{r.usedCredits}</div>
+        <div className="text-3xl font-bold text-blue-700">
+          {r.usedCredits}
+        </div>
         <div className="text-xs text-gray-500 mt-1">Credits Used</div>
       </div>
     </div>
 
-    {/* Date */}
-    <div className="mt-4 flex items-center gap-2 text-sm text-gray-500">
-      <Calendar className="w-4 h-4" />
-      {new Date(r.lastUpdated).toLocaleDateString(undefined, {
-        month: "short",
-        day: "2-digit",
-        year: "numeric",
-      })}
-    </div>
-
-    {/* Footer link pinned at bottom-right */}
-    <div className="mt-4 flex justify-end">
-  <Link
-    to={`/seo-reports/${r.id}`}
-    className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 font-medium text-sm"
-    aria-label={`View report for ${r.monthLabel}`}
-  >
-    View Report
-    <ExternalLink className="w-4 h-4" />
-  </Link>
+    {/* Footer row (date left, link right) */}
+    <div className="mt-6 flex items-center justify-between text-sm text-gray-500">
+      <div className="flex items-center gap-2">
+        <Calendar className="w-4 h-4" />
+        {new Date(r.lastUpdated).toLocaleDateString(undefined, {
+          month: "short",
+          day: "2-digit",
+          year: "numeric",
+        })}
+      </div>
+      <button
+        onClick={() => navigate(`/seo-reports/${r.id}`)}
+        className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 font-medium text-sm"
+      >
+        View Report
+        <ExternalLink className="w-4 h-4" />
+      </button>
     </div>
   </div>
 </div>
