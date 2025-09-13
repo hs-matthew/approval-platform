@@ -147,19 +147,16 @@ export default function Navigation({ currentUser }) {
               <div className="my-2 border-t border-gray-200" />
 
               <div className="flex items-center justify-between px-4 py-2 hover:bg-gray-100">
-  <div className="flex flex-col items-start">
-    <span className="text-sm font-medium text-gray-900">
-      {name || email}
-    </span>
+<button
+  onClick={() => { setOpen(false); navigate("/user-profile"); }}
+  className="w-full flex items-center justify-between px-4 py-2 hover:bg-gray-100"
+>
+  <div className="flex flex-col items-start text-left">
+    <span className="text-sm font-medium text-gray-900">{name || email}</span>
     <span className="text-xs text-gray-500 truncate">{email}</span>
   </div>
-  <button
-    onClick={() => { setOpen(false); navigate("/user-profile"); }}
-    className="text-xs text-blue-600 hover:underline ml-2"
-  >
-    Edit Profile
-  </button>
-</div>
+  <span className="text-xs text-blue-600 ml-2">Edit</span>
+</button>
 
               {/* Desktop-only admin items (mobile also shows them here) */}
               {isAdmin && (
