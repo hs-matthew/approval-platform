@@ -190,14 +190,34 @@ const UserForm = ({
   initialValues = null,
    allowEmailEdit = false
 }) => {
-  // Helper to safely shape form data (used for both create and edit)
-  const normalize = (vals) => ({
-    name: vals?.name ?? "",
-    email: vals?.email ?? "",
-    role: vals?.role ?? "collaborator",
-    workspaceIds: Array.isArray(vals?.workspaceIds) ? vals.workspaceIds : [],
-    collaboratorPerms: vals?.collaboratorPerms ?? { content: true, audits: false, reports: false },
-  });
+   // Helper to safely shape form data (used for both create and edit)
+  const normalize = (vals) => {
+    let workspaceIds = [];
+    if (Array.isArray(vals?.workspaceIds)) {
+      workspaceIds = vals.workspaceIds;
+    } else if (vals?.memberships && typeof vals.memberships === "object") {
+      workspaceIds = Object.entries(vals.memberships)
+        .filter(([_, v]) => {
+          if (v == null) return false;
+          if (typeof v === "boolean") return v;               // e.g., { wsId: true }
+          if (typeof v === "object") return v.assigned !== false; // e.g., { wsId: { assigned: true } }
+          return false;
+        })
+        .map(([k]) => k);
+    }
+
+    return {
+      name: vals?.name ?? "",
+      email: vals?.email ?? "",
+      role: vals?.role ?? "collaborator",
+      workspaceIds,
+      collaboratorPerms: vals?.collaboratorPerms ?? {
+        content: true,
+        audits: false,
+        reports: false,
+      },
+    };
+  };
 
   // Initialize form state (handles both create and edit)
   const [formData, setFormData] = useState(() =>
