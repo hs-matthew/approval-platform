@@ -146,6 +146,26 @@ function MainRoutes(props) {
     onAddWorkspace,
   } = props;
 
+  function ProfilePlaceholder({ currentUser }) {
+  return (
+    <div className="max-w-3xl mx-auto p-6">
+      <h1 className="text-xl font-semibold mb-2">Profile</h1>
+      <pre className="text-sm bg-white border rounded p-3 overflow-auto">
+        {JSON.stringify(currentUser || {}, null, 2)}
+      </pre>
+    </div>
+  );
+}
+
+function LoginPlaceholder() {
+  return (
+    <div className="max-w-md mx-auto p-6">
+      <h1 className="text-xl font-semibold mb-2">Login</h1>
+      <p className="text-gray-600">Replace this with your real Login page.</p>
+    </div>
+  );
+}
+
   // 🟦 Single source of truth for active workspace
   const { activeWorkspaceId } = useWorkspace();
 
