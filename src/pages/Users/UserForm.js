@@ -2,6 +2,23 @@
 import React, { useMemo, useState } from "react";
 import { UserPlus, Users, Shield, Edit, Mail, AlertCircle, CheckCircle, CheckSquare, Building2 } from "lucide-react";
 
+// Are we editing an existing user?
+const isEdit = Boolean(initialValues && (initialValues.id || initialValues.email));
+
+// Normalize initial values (in case some fields are missing)
+const normalize = (vals) => ({
+  name: vals?.name ?? "",
+  email: vals?.email ?? "",
+  role: vals?.role ?? "collaborator",
+  workspaceIds: Array.isArray(vals?.workspaceIds) ? vals.workspaceIds : [],
+  collaboratorPerms: vals?.collaboratorPerms ?? { content: true, audits: false, reports: false },
+});
+
+// If initialValues can change over time, keep form in sync
+React.useEffect(() => {
+  if (initialValues) setFormData(normalize(initialValues));
+}, [initialValues]);
+
 /* =========================
    Searchable Chips Multi-Select
    ========================= */
@@ -18,9 +35,6 @@ function WorkspaceMultiSelect({
   const [open, setOpen] = React.useState(false);
   const [query, setQuery] = React.useState("");
   const [activeIndex, setActiveIndex] = React.useState(-1);
-
-   // Are we editing an existing user?
-   const isEdit = Boolean(initialValues && (initialValues.id || initialValues.email));
 
   const idToName = React.useMemo(() => {
     const m = new Map();
@@ -192,14 +206,8 @@ const UserForm = ({
   initialValues = null
 }) => {
   const [formData, setFormData] = useState(() =>
-    initialValues ?? {
-      name: "",
-      email: "",
-      role: "collaborator",   // default
-      workspaceIds: [],       // multi-select
-      collaboratorPerms: { content: true, audits: false, reports: false },
-    }
-  );
+  initialValues ? normalize(initialValues) : normalize(null)
+);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [validationErrors, setValidationErrors] = useState({});
   const [showSuccess, setShowSuccess] = useState(false);
@@ -243,30 +251,44 @@ const UserForm = ({
     }));
   };
 
-  const validate = () => {
-    const e = {};
-    const name = (formData.name || "").trim();
-    const email = (formData.email || "").trim().toLowerCase();
+ const validate = () => {
+  const e = {};
+  const name = (formData.name || "").trim();
+  const email = (formData.email || "").trim().toLowerCase();
 
-    if (!name) e.name = "Full name is required";
-    else if (name.length < 2) e.name = "Name must be at least 2 characters";
-    else if (name.length > 50) e.name = "Name must be < 50 characters";
+  if (!name) e.name = "Full name is required";
+  else if (name.length < 2) e.name = "Name must be at least 2 characters";
+  else if (name.length > 50) e.name = "Name must be < 50 characters";
 
-    if (!email) e.email = "Email is required";
-    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) e.email = "Enter a valid email";
-    else if (users.find((u) => (u.email || "").toLowerCase() === email)) e.email = "A user with this email already exists";
-
-    if (!ROLES.includes(formData.role)) e.role = "Select a valid role";
-
-    // require at least one workspace for roles other than owner/admin
-    const requiresWorkspace = !["owner", "admin"].includes(formData.role);
-    if (requiresWorkspace && formData.workspaceIds.length === 0) {
-      e.workspaceIds = "Select at least one workspace";
+  if (!email) {
+    e.email = "Email is required";
+  } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    e.email = "Enter a valid email";
+  } else {
+    // prevent duplicates, but allow the same email if editing the same user
+    const duplicate = users.find(
+      (u) =>
+        (u.email || "").toLowerCase() === email &&
+        u.id !== initialValues?.id
+    );
+    if (duplicate) {
+      e.email = "A user with this email already exists";
     }
+  }
 
-    setValidationErrors(e);
-    return Object.keys(e).length === 0;
-  };
+  if (!ROLES.includes(formData.role)) {
+    e.role = "Select a valid role";
+  }
+
+  // require at least one workspace for roles other than owner/admin
+  const requiresWorkspace = !["owner", "admin"].includes(formData.role);
+  if (requiresWorkspace && formData.workspaceIds.length === 0) {
+    e.workspaceIds = "Select at least one workspace";
+  }
+
+  setValidationErrors(e);
+  return Object.keys(e).length === 0;
+};
 
 const handleSubmit = async (e) => {
   e.preventDefault();
