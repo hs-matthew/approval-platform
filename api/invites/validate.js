@@ -1,6 +1,4 @@
 // /api/invites/validate.js
-export const config = { runtime: "nodejs18.x" };
-
 import crypto from "crypto";
 import { db } from "../_firebaseAdmin.js";
 
