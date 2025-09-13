@@ -14,22 +14,21 @@ import {
 } from "firebase/firestore";
 import { db, auth } from "../../lib/firebase";
 
-/** Normalize & guard role coming from the UI.
- *  - Valid: owner, admin, staff, client, collaborator
- *  - UI may NOT create "owner": if "owner" is passed, demote to "admin".
- *  - Owner should be DB-managed only (manual in Firestore).
- */
-function normalizeRole(role) {
+/** =========================
+ * Role + perms guards
+ * ========================= */
+export function normalizeRole(role) {
   const r = String(role || "collaborator").toLowerCase();
   const allowed = ["owner", "admin", "staff", "client", "collaborator"];
   const clean = allowed.includes(r) ? r : "collaborator";
+  // UI may not create "owner" — demote to admin
   return clean === "owner" ? "admin" : clean;
 }
 
-const DEFAULT_COLLAB_PERMS = { content: true, audits: false, reports: false };
+export const DEFAULT_COLLAB_PERMS = { content: true, audits: false, reports: false };
 
 /** Find an existing user doc by email (returns {id, data} or null) */
-async function findUserByEmail(email) {
+export async function findUserByEmail(email) {
   const normalizedEmail = String(email || "").trim().toLowerCase();
   if (!normalizedEmail) return null;
   const qSnap = await getDocs(
@@ -40,15 +39,16 @@ async function findUserByEmail(email) {
   return { id: d.id, data: d.data() };
 }
 
-/**
- * Create (or upsert) a user admin record + create an invite.
- * Canonical: workspaceIds[]
- * NO memberships written anywhere. Auto-generated Firestore ID.
+/** =========================
+ * Add user + send invite
+ * =========================
+ * - Upserts admin-facing user record in Firestore
+ * - Calls /api/invites/create to generate a secure token & email via Mailgun
  *
  * @param {{
  *  name?: string,
  *  email: string,
- *  role?: "owner"|"admin"|"staff"|"client"|"collaborator", // "owner" will be coerced to "admin"
+ *  role?: "owner"|"admin"|"staff"|"client"|"collaborator",
  *  workspaceIds?: string[],
  *  collaboratorPerms?: {content?:boolean,audits?:boolean,reports?:boolean}|null
  * }} payload
@@ -63,10 +63,11 @@ export async function addUserWithInvite(payload) {
   } = payload;
 
   const normalizedEmail = String(email).trim().toLowerCase();
-  const roleNorm = normalizeRole(role); // 🔒 guard
+  const roleNorm = normalizeRole(role);
   const createdBy = auth.currentUser?.uid || "system";
   const safeWorkspaceIds = Array.isArray(workspaceIds) ? workspaceIds.map(String) : [];
 
+  // Admin-facing user record (not Auth)
   const baseData = {
     name: String(name).trim(),
     email: normalizedEmail,
@@ -94,56 +95,60 @@ export async function addUserWithInvite(payload) {
     userId = userRef.id;
   }
 
-  // Create invite (fulfilled on first login)
-  await addDoc(collection(db, "invites"), {
-    email: normalizedEmail,
-    role: roleNorm,
-    workspaceIds: safeWorkspaceIds,
-    collaboratorPerms:
-      roleNorm === "collaborator" ? (collaboratorPerms || DEFAULT_COLLAB_PERMS) : null,
-    status: "pending",
-    createdAt: serverTimestamp(),
-    createdBy,
-    createdUserId: userId, // helpful for traceability
-  });
+  // 🔔 Create + email secure invite via serverless API
+  // Server writes the invite (with tokenHash) and sends Mailgun email.
+  try {
+    const resp = await fetch("/api/invites/create", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        email: normalizedEmail,
+        role: roleNorm,
+        workspaceIds: safeWorkspaceIds,
+        collaboratorPerms:
+          roleNorm === "collaborator" ? (collaboratorPerms || DEFAULT_COLLAB_PERMS) : null,
+        createdBy,
+      }),
+    });
+
+    if (!resp.ok) {
+      const txt = await resp.text().catch(() => "");
+      console.error("[addUserWithInvite] /api/invites/create failed", resp.status, txt);
+      // Non-fatal: user record exists; admin can use resendInvite()
+    }
+  } catch (e) {
+    console.error("[addUserWithInvite] fetch error /api/invites/create", e);
+    // Non-fatal to user creation
+  }
+
+  return { userId, email: normalizedEmail };
 }
 
-/**
- * Update a user admin record.
- * - Replaces workspaceIds with exactly what you pass (including empty array) when provided.
- * - Never writes memberships; also deletes legacy memberships if present.
- *
- * @param {string} docId Firestore doc id of the user
- * @param {{
- *  name?: string,
- *  email?: string,
- *  role?: "owner"|"admin"|"staff"|"client"|"collaborator", // "owner" will be coerced to "admin"
- *  workspaceIds?: string[],
- *  collaboratorPerms?: {content?:boolean,audits?:boolean,reports?:boolean}|null
- * }} changes
+/** =========================
+ * Update user admin record
+ * =========================
+ * - Full replace of workspaceIds when provided
+ * - Cleans legacy memberships
  */
 export async function updateUserBasic(docId, changes) {
   const patch = {
     updatedAt: serverTimestamp(),
-    // Defensive cleanup of any legacy field on every update
     memberships: deleteField(),
   };
 
   if (changes.name != null) patch.name = String(changes.name).trim();
   if (changes.email != null) patch.email = String(changes.email).trim().toLowerCase();
-  if (changes.role != null) patch.role = normalizeRole(changes.role); // 🔒 guard
+  if (changes.role != null) patch.role = normalizeRole(changes.role);
 
   if (Array.isArray(changes.workspaceIds)) {
     patch.workspaceIds = changes.workspaceIds.map(String); // full replace
   }
 
   if ("collaboratorPerms" in changes) {
-    const roleNext = patch.role ?? undefined; // only set if provided above
-    const effectiveRole = roleNext || undefined; // undefined means unchanged
-    // If role was provided and is not collaborator → perms null.
-    // If role not provided, keep perms as provided (caller controls).
+    // If role is changed and not collaborator → null perms
+    const nextRole = patch.role;
     patch.collaboratorPerms =
-      effectiveRole && effectiveRole !== "collaborator"
+      nextRole && nextRole !== "collaborator"
         ? null
         : (changes.collaboratorPerms ?? { ...DEFAULT_COLLAB_PERMS });
   }
@@ -151,18 +156,11 @@ export async function updateUserBasic(docId, changes) {
   await updateDoc(doc(db, "users", docId), patch);
 }
 
-/**
- * Fulfill invite after first login.
- * - Upserts user (by email) with canonical workspaceIds[].
- * - NO memberships written. Uses auto-ID (existing if found).
- *
- * @param {{
- *  uid?: string,        // optional; not used for doc id
- *  email: string,
- *  role: "owner"|"admin"|"staff"|"client"|"collaborator", // "owner" will be coerced to "admin"
- *  workspaceIds?: string[],
- *  collaboratorPerms?: {content?:boolean,audits?:boolean,reports?:boolean}|null
- * }} args
+/** =========================
+ * Fulfill invite on first login (fallback util)
+ * =========================
+ * - Keeps canonical workspaceIds[]
+ * - No memberships
  */
 export async function fulfillInviteOnFirstLogin({
   uid,
@@ -172,7 +170,7 @@ export async function fulfillInviteOnFirstLogin({
   collaboratorPerms = null,
 }) {
   const normalizedEmail = String(email || "").trim().toLowerCase();
-  const roleNorm = normalizeRole(role); // 🔒 guard
+  const roleNorm = normalizeRole(role);
   const safeWorkspaceIds = Array.isArray(workspaceIds) ? workspaceIds.map(String) : [];
 
   const baseData = {
@@ -183,7 +181,6 @@ export async function fulfillInviteOnFirstLogin({
       roleNorm === "collaborator" ? (collaboratorPerms || DEFAULT_COLLAB_PERMS) : null,
     updatedAt: serverTimestamp(),
     memberships: deleteField(),
-    // Optionally keep who fulfilled; harmless if null/undefined
     fulfilledByUid: uid || null,
   };
 
@@ -200,4 +197,40 @@ export async function fulfillInviteOnFirstLogin({
       ...baseData,
     });
   }
+}
+
+/** =========================
+ * Resend invite (for InvitesList)
+ * =========================
+ * - Reuses the same serverless endpoint
+ */
+export async function resendInvite({
+  email,
+  role,
+  workspaceIds = [],
+  collaboratorPerms = null,
+  createdBy = "admin-resend",
+}) {
+  const normalizedEmail = String(email || "").trim().toLowerCase();
+  const roleNorm = normalizeRole(role);
+  const safeWorkspaceIds = Array.isArray(workspaceIds) ? workspaceIds.map(String) : [];
+
+  const resp = await fetch("/api/invites/create", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      email: normalizedEmail,
+      role: roleNorm,
+      workspaceIds: safeWorkspaceIds,
+      collaboratorPerms:
+        roleNorm === "collaborator" ? (collaboratorPerms || DEFAULT_COLLAB_PERMS) : null,
+      createdBy,
+    }),
+  });
+
+  if (!resp.ok) {
+    const txt = await resp.text().catch(() => "");
+    throw new Error(`Resend failed (${resp.status}): ${txt}`);
+  }
+  return true;
 }
