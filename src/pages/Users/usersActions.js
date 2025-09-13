@@ -56,7 +56,8 @@ export async function findUserByEmail(email) {
    - Does NOT create/update Firestore users/*
    - Relies on AcceptInvite to create users/{uid} after Auth
    ========================= */
-export async function addUserWithInvite(payload) {
+export async function sendInviteOnly(payload) {
+  console.log("[sendInviteOnly] invite-only flow"); // debug
   const {
     name = "", // optional: can be stored on invite if you want
     email = "",
