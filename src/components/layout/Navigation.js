@@ -3,14 +3,11 @@ import { NavLink, useNavigate } from "react-router-dom";
 import { signOut } from "firebase/auth";
 import { auth } from "../../lib/firebase";
 import { useWorkspace } from "../../context/WorkspaceContext";
-import { Menu, X } from "lucide-react";
 
 export default function Navigation({ currentUser }) {
   const navigate = useNavigate();
-  const [open, setOpen] = useState(false);        // avatar dropdown (desktop)
-  const [mobileOpen, setMobileOpen] = useState(false); // mobile hamburger panel
-  const menuRef = useRef(null);                   // avatar dropdown ref
-  const mobileRef = useRef(null);                 // mobile panel ref
+  const [open, setOpen] = useState(false); // avatar dropdown for both desktop+mobile
+  const menuRef = useRef(null);
 
   const { workspaces, activeWorkspaceId, setActiveWorkspaceId, activeWorkspace, loadingWorkspaces } = useWorkspace();
 
@@ -28,18 +25,9 @@ export default function Navigation({ currentUser }) {
   const initials =
     (name || email).trim().split(/\s+/).slice(0, 2).map((s) => s[0]?.toUpperCase()).join("") || "U";
 
-  // Close menus when clicking outside
   useEffect(() => {
-    const onClick = (e) => {
-      if (menuRef.current && !menuRef.current.contains(e.target)) setOpen(false);
-      if (mobileRef.current && !mobileRef.current.contains(e.target)) setMobileOpen(false);
-    };
-    const onKey = (e) => {
-      if (e.key === "Escape") {
-        setOpen(false);
-        setMobileOpen(false);
-      }
-    };
+    const onClick = (e) => { if (menuRef.current && !menuRef.current.contains(e.target)) setOpen(false); };
+    const onKey = (e) => { if (e.key === "Escape") setOpen(false); };
     document.addEventListener("mousedown", onClick);
     document.addEventListener("keydown", onKey);
     return () => {
@@ -90,20 +78,9 @@ export default function Navigation({ currentUser }) {
 
   return (
     <header className="bg-white border-b border-gray-200 w-full">
-      {/* Top bar */}
       <div className="px-6 py-4 flex items-center justify-between">
         {/* Left: Logo + desktop nav */}
         <div className="flex items-center gap-6">
-          {/* Mobile: hamburger */}
-          <button
-            className="md:hidden -ml-2 p-2 rounded-md hover:bg-gray-100 focus:outline-none"
-            aria-label={mobileOpen ? "Close menu" : "Open menu"}
-            aria-expanded={mobileOpen}
-            onClick={() => setMobileOpen((o) => !o)}
-          >
-            {mobileOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-          </button>
-
           <NavLink to="/dashboard" className="flex items-center gap-3">
             <img src="/assets/hs-square-icon.png" alt="Company Logo" className="h-10 w-auto object-contain" />
             <h1 className="text-xl font-bold text-gray-900">Content Approval Platform</h1>
@@ -115,11 +92,14 @@ export default function Navigation({ currentUser }) {
           </nav>
         </div>
 
-        {/* Right: workspace selector + avatar menu (desktop) */}
-        <div className="hidden md:flex items-center gap-4 relative" ref={menuRef}>
-          <WorkspaceSelect className="min-w-[220px]" />
+        {/* Right: workspace selector (desktop) + avatar (all) */}
+        <div className="flex items-center gap-4 relative" ref={menuRef}>
+          {/* Desktop workspace selector */}
+          <div className="hidden md:block min-w-[220px]">
+            <WorkspaceSelect />
+          </div>
 
-          {/* Avatar dropdown */}
+          {/* Avatar (triggers dropdown on both desktop + mobile) */}
           <button
             onClick={() => setOpen((o) => !o)}
             aria-haspopup="menu"
@@ -136,11 +116,13 @@ export default function Navigation({ currentUser }) {
             )}
           </button>
 
+          {/* Dropdown (right aligned). On mobile it includes nav + workspace; on desktop it's your original menu */}
           {open && (
             <div
               role="menu"
-              className="absolute right-0 top-[54px] w-60 bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden z-50"
+              className="absolute right-0 top-[54px] w-72 max-w-[90vw] bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden z-50"
             >
+              {/* Role chip */}
               {rolePrimary && (
                 <div className="px-3 py-2 bg-gray-50 border-b border-gray-200">
                   <span className="px-2 py-0.5 rounded-full text-xs font-semibold text-purple-700 bg-purple-100">
@@ -148,10 +130,31 @@ export default function Navigation({ currentUser }) {
                   </span>
                 </div>
               )}
-              <button onClick={() => { setOpen(false); navigate("/profile"); }} className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100">
+
+              {/* MOBILE-ONLY: Primary nav links */}
+              <div className="md:hidden px-2 pt-2">
+                <nav className="flex flex-col gap-1">
+                  <NavLinks onNavigate={() => setOpen(false)} />
+                </nav>
+              </div>
+
+              {/* MOBILE-ONLY: Workspace selector */}
+              <div className="md:hidden px-3 pt-3">
+                <WorkspaceSelect />
+              </div>
+
+              {/* Shared actions */}
+              <div className="my-2 border-t border-gray-200" />
+
+              <button
+                onClick={() => { setOpen(false); navigate("/profile"); }}
+                className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100"
+              >
                 Profile
                 <div className="text-xs text-gray-500 truncate">{email}</div>
               </button>
+
+              {/* Desktop-only admin items (mobile also shows them here) */}
               {isAdmin && (
                 <>
                   <div className="my-1 border-t border-gray-200" />
@@ -159,7 +162,9 @@ export default function Navigation({ currentUser }) {
                   <button onClick={() => { setOpen(false); navigate("/workspaces"); }} className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100">Manage Workspaces</button>
                 </>
               )}
+
               <div className="my-1 border-t border-gray-200" />
+
               <button
                 onClick={async () => { setOpen(false); await signOut(auth); navigate("/login"); }}
                 className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50"
@@ -169,65 +174,7 @@ export default function Navigation({ currentUser }) {
             </div>
           )}
         </div>
-
-        {/* Right (mobile): avatar circle (no dropdown—actions in panel) */}
-        <div className="md:hidden">
-          {photoURL ? (
-            <img src={photoURL} alt={name || email} className="h-8 w-8 rounded-full object-cover border border-gray-200" />
-          ) : (
-            <div className="h-8 w-8 rounded-full bg-gray-200 text-gray-700 flex items-center justify-center font-semibold border border-gray-300">
-              {initials}
-            </div>
-          )}
-        </div>
       </div>
-
-      {/* Mobile slide-down panel */}
-      {mobileOpen && (
-        <div
-          ref={mobileRef}
-          className="md:hidden border-t border-gray-200 bg-white px-4 pb-4 pt-3 shadow-sm"
-        >
-          <nav className="flex flex-col gap-1">
-            <NavLinks onNavigate={() => setMobileOpen(false)} />
-          </nav>
-
-          <div className="mt-3">
-            <WorkspaceSelect />
-          </div>
-
-          <div className="mt-3 rounded-lg border border-gray-200 overflow-hidden">
-            {rolePrimary && (
-              <div className="px-3 py-2 bg-gray-50 border-b border-gray-200">
-                <span className="px-2 py-0.5 rounded-full text-xs font-semibold text-purple-700 bg-purple-100">
-                  {rolePrimary.charAt(0).toUpperCase() + rolePrimary.slice(1)}
-                </span>
-              </div>
-            )}
-            <button
-              onClick={() => { setMobileOpen(false); navigate("/profile"); }}
-              className="w-full text-left px-4 py-2 text-sm hover:bg-gray-50"
-            >
-              Profile
-              <div className="text-xs text-gray-500 truncate">{email}</div>
-            </button>
-            {isAdmin && (
-              <>
-                <div className="my-1 border-t border-gray-200" />
-                <button onClick={() => { setMobileOpen(false); navigate("/users"); }} className="w-full text-left px-4 py-2 text-sm hover:bg-gray-50">Manage Users</button>
-                <button onClick={() => { setMobileOpen(false); navigate("/workspaces"); }} className="w-full text-left px-4 py-2 text-sm hover:bg-gray-50">Manage Workspaces</button>
-              </>
-            )}
-            <div className="my-1 border-t border-gray-200" />
-            <button
-              onClick={async () => { setMobileOpen(false); await signOut(auth); navigate("/login"); }}
-              className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50"
-            >
-              Sign Out
-            </button>
-          </div>
-        </div>
-      )}
     </header>
   );
 }
