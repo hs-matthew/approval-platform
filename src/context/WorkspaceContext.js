@@ -1,6 +1,6 @@
 // src/context/WorkspaceContext.js
 import * as React from "react";                     // ⟵ key change
-import { collection, onSnapshot, query, where } from "firebase/firestore";
+import { collection, onSnapshot, query, where, orderBy } from "firebase/firestore";
 import { db } from "../lib/firebase";
 import { useAuth } from "../hooks/useAuth";
 
@@ -27,10 +27,11 @@ export function WorkspaceProvider({ children }) {
     }
 
     setLoadingWorkspaces(true);
-    const q = query(
-      collection(db, "workspaces"),
-      where(`members.${user.uid}`, "in", ["admin", "writer", "client"])
-    );
+const q = query(
+  collection(db, "workspaces"),
+  where(`members.${user.uid}.role`, "in", ["owner","admin","staff","client","collaborator"]),
+  orderBy("name")
+);
 
     const unsub = onSnapshot(
       q,
