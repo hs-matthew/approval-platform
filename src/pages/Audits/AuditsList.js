@@ -52,7 +52,7 @@ export default function AuditsList() {
   return (
     <div className="max-w-6xl mx-auto p-6">
 {/* Header */}
-<div className="flex items-center justify-between mb-5">
+<div className="flex items-center justify-between mb-6">
   {/* Left: Title + description */}
   <div>
     <h1 className="text-3xl font-extrabold text-gray-900">Technical SEO Audits</h1>
@@ -61,11 +61,12 @@ export default function AuditsList() {
     </p>
   </div>
 
-  {/* Right: stats + import */}
+  {/* Right: Active Audits + Import CSV */}
   <div className="flex items-center gap-6">
-    <div className="text-right">
-      <div className="text-sm text-gray-500">Active Audits</div>
-      <div className="text-3xl font-bold text-blue-600">{activeCount}</div>
+    {/* Active Audits Stat Card */}
+    <div className="bg-white border border-gray-200 rounded-lg shadow-sm px-6 py-4 text-center">
+      <div className="text-sm font-medium text-gray-600">Active Audits</div>
+      <div className="text-2xl font-bold text-blue-600">{activeCount}</div>
     </div>
 
     {/* Admin-only Import CSV */}
