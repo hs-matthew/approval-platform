@@ -90,7 +90,7 @@ return (
 
           return (
             <div key={audit.id} className="bg-white rounded-xl border border-gray-200 shadow-sm">
-              <div className="p-5">
+              <div className="p-5 flex flex-col h-full">
                 {/* Title row */}
                 <div className="flex items-center justify-between">
                   <div className="text-lg font-semibold text-gray-900">{audit.title}</div>
@@ -126,31 +126,31 @@ return (
                   </div>
                 </div>
 
-                {/* Progress + CTA */}
-                <div className="mt-4 flex items-center gap-3">
-                  <div className="flex-1">
-                    <div className="text-xs text-gray-500 mb-1">Progress</div>
-                    <div className="w-full bg-gray-200 rounded-full h-2">
-                      <div
-                        className={`h-2 rounded-full ${progressPct === 100 ? "bg-green-600" : "bg-green-500"}`}
-                        style={{ width: `${progressPct}%` }}
-                      />
-                    </div>
-                  </div>
-  <Link
-    to={`/audits/${audit.id}`}
-    className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 font-medium text-sm"
-    aria-label={`View details for ${audit.name}`}
-  >
-    View Details
-    <ArrowRight className="w-4 h-4" />
-  </Link>
-                </div>
-              </div>
-            </div>
-          );
-        })}
+      {/* Progress */}
+      <div className="mt-4">
+        <div className="text-xs text-gray-500 mb-1">Progress</div>
+        <div className="w-full bg-gray-200 rounded-full h-2">
+          <div
+            className={`h-2 rounded-full ${progressPct === 100 ? "bg-green-600" : "bg-green-500"}`}
+            style={{ width: `${progressPct}%` }}
+          />
+        </div>
       </div>
+    </div>
+
+    {/* Footer (pinned to bottom-right) */}
+    <div className="mt-6 flex justify-end">
+      <Link
+        to={`/audits/${audit.id}`}
+        className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 font-medium text-sm"
+        aria-label={`View details for ${audit.title || audit.id}`}
+      >
+        View Details
+        <ArrowRight className="w-4 h-4" />
+      </Link>
+    </div>
+  </div>
+</div>
 
       {/* Admin-only Import Modal */}
       {showImport && isAdmin && (
