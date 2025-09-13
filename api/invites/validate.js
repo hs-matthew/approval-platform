@@ -1,4 +1,4 @@
-// /api/invites/validate.js
+// pages/api/invites/validate.js
 export const config = { runtime: "nodejs" };
 
 import crypto from "crypto";
@@ -10,14 +10,20 @@ function sha256(s) {
 
 export default async function handler(req, res) {
   try {
-    // Expect GET /api/invites/validate?token=...
-    const token = String(req.query.token || "").trim();
+    if (req.method !== "POST") {
+      res.setHeader("Allow", ["POST"]);
+      return res.status(405).end("Method Not Allowed");
+    }
+
+    // IMPORTANT: Ensure Next.js body parser is enabled (default).
+    // If you previously disabled it: remove export const config.api.bodyParser = false
+
+    const token = String(req.body?.token || "").trim();
     if (!token) {
-      return res.status(200).json({ valid: false, reason: "missing_token" });
+      return res.status(400).json({ valid: false, reason: "missing_token" });
     }
 
     const tokenHash = sha256(token);
-
     const snap = await db
       .collection("invites")
       .where("tokenHash", "==", tokenHash)
@@ -25,32 +31,32 @@ export default async function handler(req, res) {
       .get();
 
     if (snap.empty) {
-      console.log("[validate] not_found", tokenHash.slice(0, 8));
-      return res.status(200).json({ valid: false, reason: "not_found" });
+      return res.status(404).json({ valid: false, reason: "not_found" });
     }
 
-    const doc = snap.docs[0];
-    const data = doc.data();
+    const docRef = snap.docs[0];
+    const data = docRef.data();
 
     if (data.used) {
-      return res.status(200).json({ valid: false, reason: "used" });
+      return res.status(409).json({ valid: false, reason: "used" });
     }
 
     if (data.expiresAt && data.expiresAt.toMillis() < Date.now()) {
-      return res.status(200).json({ valid: false, reason: "expired" });
+      return res.status(410).json({ valid: false, reason: "expired" });
     }
 
-    return res.status(200).json({
-      valid: true,
-      inviteId: doc.id,
+    const invite = {
+      inviteId: docRef.id,
       email: data.email,
       role: data.role,
       workspaceIds: data.workspaceIds || [],
       collaboratorPerms:
         data.collaboratorPerms || { content: true, audits: false, reports: false },
-    });
+    };
+
+    return res.status(200).json({ valid: true, invite });
   } catch (e) {
     console.error("INVITE_VALIDATE", e);
-    return res.status(200).json({ valid: false, reason: "server_error" });
+    return res.status(500).json({ valid: false, reason: "server_error" });
   }
 }
