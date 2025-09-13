@@ -373,18 +373,24 @@ const handleSubmit = async (e) => {
       (formData.workspaceIds || []).map((id) => [String(id), { assigned: true }])
     );
 
+     const nextWorkspaceIds = (formData.workspaceIds || []).map(String);
+     
     // --- Final payload ---
-    const payload = {
-      ...(initialValues || {}),           // keep existing fields like id, createdAt, createdBy, etc.
-      ...base,                            // override with latest form values
-      memberships: nextMemberships,       // normalized memberships shape
-      createdAt: initialValues?.createdAt ?? new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      isActive: initialValues?.isActive ?? true,
-      lastLogin: initialValues?.lastLogin ?? null,
-      createdBy: initialValues?.createdBy ?? "system",
-      id: initialValues?.id ?? undefined, // include id if present
-    };
+const payload = {
+  ...(initialValues || {}),
+  name: formData.name.trim(),
+  email: (isEdit && !allowEmailEdit ? (initialValues?.email || "") : formData.email).trim().toLowerCase(),
+  role: formData.role,
+  workspaceIds: nextWorkspaceIds,       // ← always an array (possibly empty)
+  memberships: nextMemberships,         // ← always an object (possibly empty)
+  collaboratorPerms: formData.role === "collaborator" ? formData.collaboratorPerms : null,
+  createdAt: initialValues?.createdAt ?? new Date().toISOString(),
+  updatedAt: new Date().toISOString(),
+  isActive: initialValues?.isActive ?? true,
+  lastLogin: initialValues?.lastLogin ?? null,
+  createdBy: initialValues?.createdBy ?? "system",
+  id: initialValues?.id ?? undefined,
+};
 
     await onAddUser(payload); // or onUpdateUser(payload) if you split handlers
 
