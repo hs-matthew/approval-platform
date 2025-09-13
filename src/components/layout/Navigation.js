@@ -9,17 +9,31 @@ export default function Navigation({ currentUser }) {
   const [open, setOpen] = useState(false);
   const menuRef = useRef(null);
 
-  const name = currentUser?.name || currentUser?.displayName || "";
-  const email = currentUser?.email || "";
-  const rolesNorm = Array.isArray(currentUser?.roles)
-    ? currentUser.roles.map((r) => String(r).toLowerCase())
-    : currentUser?.role
-    ? [String(currentUser.role).toLowerCase()]
-    : [];
-  const rolePrimary = rolesNorm[0] || "";
-  const isAdmin = rolesNorm.includes("admin");
+  // Close on outside click / Esc
+  useEffect(() => {
+    const onClick = (e) => {
+      if (menuRef.current && !menuRef.current.contains(e.target)) setOpen(false);
+    };
+    const onKey = (e) => e.key === "Escape" && setOpen(false);
+    document.addEventListener("mousedown", onClick);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onClick);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, []);
 
-  const photoURL = currentUser?.photoURL;
+  const name = currentUser?.name || currentUser?.displayName || "";
+  const email = currentUser?.email || "admin@company.com"; // fallback to match mock
+  const roleRaw =
+    currentUser?.role ||
+    (Array.isArray(currentUser?.roles) ? currentUser.roles[0] : "") ||
+    "admin";
+  const role =
+    typeof roleRaw === "string" ? roleRaw.toLowerCase() : String(roleRaw).toLowerCase();
+  const isAdmin = role === "admin";
+
+  // Avatar / initials
   const initials =
     (name || email)
       .trim()
@@ -28,23 +42,15 @@ export default function Navigation({ currentUser }) {
       .map((s) => s[0]?.toUpperCase())
       .join("") || "U";
 
-  useEffect(() => {
-    const onClick = (e) => {
-      if (menuRef.current && !menuRef.current.contains(e.target)) setOpen(false);
-    };
-    document.addEventListener("mousedown", onClick);
-    return () => document.removeEventListener("mousedown", onClick);
-  }, []);
-
+  // Link styles
   const linkBase = "px-3 py-2 rounded-md text-sm font-medium";
-  const active = "bg-blue-100 text-blue-700";
-  const inactive = "text-gray-600 hover:text-gray-900 hover:bg-gray-100";
+  const linkActive = "bg-blue-100 text-blue-700";
+  const linkInactive = "text-gray-600 hover:text-gray-900 hover:bg-gray-100";
 
   return (
     <header className="bg-white border-b border-gray-200 w-full">
-      {/* Removed max-w-6xl and mx-auto so it's full width */}
       <div className="px-6 py-4 flex items-center justify-between">
-        {/* Left */}
+        {/* Left: logo + nav */}
         <div className="flex items-center gap-6">
           <NavLink to="/dashboard" className="flex items-center gap-3">
             <img
@@ -57,43 +63,15 @@ export default function Navigation({ currentUser }) {
             </h1>
           </NavLink>
 
-          <nav className="flex items-center gap-2 ml-2">
-            <NavLink
-              to="/dashboard"
-              className={({ isActive }) =>
-                `${linkBase} ${isActive ? active : inactive}`
-              }
-            >
-              Dashboard
-            </NavLink>
-            <NavLink
-              to="/content"
-              className={({ isActive }) =>
-                `${linkBase} ${isActive ? active : inactive}`
-              }
-            >
-              Content
-            </NavLink>
-            <NavLink
-              to="/audits"
-              className={({ isActive }) =>
-                `${linkBase} ${isActive ? active : inactive}`
-              }
-            >
-              Audits
-            </NavLink>
-            <NavLink
-              to="/seo-reports"
-              className={({ isActive }) =>
-                `${linkBase} ${isActive ? active : inactive}`
-              }
-            >
-              SEO Reports
-            </NavLink>
+        <nav className="flex items-center gap-2 ml-2">
+            <NavLink to="/dashboard" end className={({ isActive }) => `${linkBase} ${isActive ? linkActive : linkInactive}`}>Dashboard</NavLink>
+            <NavLink to="/content" className={({ isActive }) => `${linkBase} ${isActive ? linkActive : linkInactive}`}>Content</NavLink>
+            <NavLink to="/audits" className={({ isActive }) => `${linkBase} ${isActive ? linkActive : linkInactive}`}>Audits</NavLink>
+            <NavLink to="/seo-reports" className={({ isActive }) => `${linkBase} ${isActive ? linkActive : linkInactive}`}>SEO Reports</NavLink>
           </nav>
         </div>
 
-        {/* Right */}
+        {/* Right: avatar + dropdown */}
         <div className="relative" ref={menuRef}>
           <button
             onClick={() => setOpen((o) => !o)}
@@ -102,9 +80,9 @@ export default function Navigation({ currentUser }) {
             className="flex items-center gap-2 focus:outline-none"
             title={email}
           >
-            {photoURL ? (
+            {currentUser?.photoURL ? (
               <img
-                src={photoURL}
+                src={currentUser.photoURL}
                 alt={name || email}
                 className="h-9 w-9 rounded-full object-cover border border-gray-200"
               />
@@ -118,59 +96,70 @@ export default function Navigation({ currentUser }) {
           {open && (
             <div
               role="menu"
-              className="absolute right-0 mt-2 w-60 bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden z-50"
+              className="absolute right-0 top-full mt-2 w-72 bg-white rounded-2xl shadow-xl ring-1 ring-black/5 z-[1000] overflow-hidden"
             >
-              {rolePrimary && (
-                <div className="px-3 py-2 bg-gray-50 border-b border-gray-200">
-                  <span className="px-2 py-0.5 rounded-full text-xs font-semibold text-purple-700 bg-purple-100">
-                    {rolePrimary.charAt(0).toUpperCase() + rolePrimary.slice(1)}
-                  </span>
-                </div>
-              )}
+              {/* Role pill header */}
+              <div className="px-4 py-3 border-b border-gray-200">
+                <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold text-purple-700 bg-purple-100">
+                  {role.charAt(0).toUpperCase() + role.slice(1)}
+                </span>
+              </div>
 
+              {/* Profile row with email subtext */}
               <button
                 onClick={() => {
                   setOpen(false);
                   navigate("/profile");
                 }}
-                className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100"
+                className="w-full text-left px-4 py-3.5 hover:bg-gray-50"
+                role="menuitem"
               >
-                Profile
-                <div className="text-xs text-gray-500 truncate">{email}</div>
+                <div className="text-[15px] font-semibold text-gray-900">Profile</div>
+                <div className="text-sm text-gray-500">{email}</div>
               </button>
 
+              {/* Divider */}
+              <div className="h-px bg-gray-200"></div>
+
+              {/* Admin-only */}
               {isAdmin && (
                 <>
-                  <div className="my-1 border-t border-gray-200" />
                   <button
                     onClick={() => {
                       setOpen(false);
                       navigate("/users");
                     }}
-                    className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100"
+                    className="w-full text-left px-4 py-3.5 hover:bg-gray-50"
+                    role="menuitem"
                   >
-                    Manage Users
+                    <div className="text-[15px] font-semibold text-gray-900">Manage Users</div>
                   </button>
+
                   <button
                     onClick={() => {
                       setOpen(false);
                       navigate("/workspaces");
                     }}
-                    className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100"
+                    className="w-full text-left px-4 py-3.5 hover:bg-gray-50"
+                    role="menuitem"
                   >
-                    Manage Workspaces
+                    <div className="text-[15px] font-semibold text-gray-900">Manage Workspaces</div>
                   </button>
+
+                  {/* Divider */}
+                  <div className="h-px bg-gray-200"></div>
                 </>
               )}
 
-              <div className="my-1 border-t border-gray-200" />
+              {/* Sign out */}
               <button
                 onClick={async () => {
                   setOpen(false);
                   await signOut(auth);
                   navigate("/login");
                 }}
-                className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50"
+                className="w-full text-left px-4 py-3.5 text-red-600 hover:bg-red-50 font-semibold"
+                role="menuitem"
               >
                 Sign Out
               </button>
