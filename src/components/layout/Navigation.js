@@ -9,27 +9,17 @@ export default function Navigation({ currentUser }) {
   const [open, setOpen] = useState(false);
   const menuRef = useRef(null);
 
-  // Close menu on outside click / Esc
-  useEffect(() => {
-    const onClick = (e) => {
-      if (menuRef.current && !menuRef.current.contains(e.target)) setOpen(false);
-    };
-    const onKey = (e) => e.key === "Escape" && setOpen(false);
-    document.addEventListener("mousedown", onClick);
-    document.addEventListener("keydown", onKey);
-    return () => {
-      document.removeEventListener("mousedown", onClick);
-      document.removeEventListener("keydown", onKey);
-    };
-  }, []);
-
-  // Basic user display info
   const name = currentUser?.name || currentUser?.displayName || "";
   const email = currentUser?.email || "";
-  const role = (currentUser?.role || (Array.isArray(currentUser?.roles) ? currentUser.roles[0] : "") || "")
-    .toString()
-    .toLowerCase();
-  const isAdmin = role === "admin";
+  const rolesNorm = Array.isArray(currentUser?.roles)
+    ? currentUser.roles.map((r) => String(r).toLowerCase())
+    : currentUser?.role
+    ? [String(currentUser.role).toLowerCase()]
+    : [];
+  const rolePrimary = rolesNorm[0] || "";
+  const isAdmin = rolesNorm.includes("admin");
+
+  const photoURL = currentUser?.photoURL;
   const initials =
     (name || email)
       .trim()
@@ -38,15 +28,23 @@ export default function Navigation({ currentUser }) {
       .map((s) => s[0]?.toUpperCase())
       .join("") || "U";
 
-  // Link styles
+  useEffect(() => {
+    const onClick = (e) => {
+      if (menuRef.current && !menuRef.current.contains(e.target)) setOpen(false);
+    };
+    document.addEventListener("mousedown", onClick);
+    return () => document.removeEventListener("mousedown", onClick);
+  }, []);
+
   const linkBase = "px-3 py-2 rounded-md text-sm font-medium";
-  const linkActive = "bg-blue-100 text-blue-700";
-  const linkInactive = "text-gray-600 hover:text-gray-900 hover:bg-gray-100";
+  const active = "bg-blue-100 text-blue-700";
+  const inactive = "text-gray-600 hover:text-gray-900 hover:bg-gray-100";
 
   return (
     <header className="bg-white border-b border-gray-200 w-full">
+      {/* Removed max-w-6xl and mx-auto so it's full width */}
       <div className="px-6 py-4 flex items-center justify-between">
-        {/* Left: logo + nav */}
+        {/* Left */}
         <div className="flex items-center gap-6">
           <NavLink to="/dashboard" className="flex items-center gap-3">
             <img
@@ -60,36 +58,42 @@ export default function Navigation({ currentUser }) {
           </NavLink>
 
           <nav className="flex items-center gap-2 ml-2">
-            {/* NavLink highlights on partial match, so /seo-reports/:id is active for /seo-reports */}
             <NavLink
               to="/dashboard"
-              end
-              className={({ isActive }) => `${linkBase} ${isActive ? linkActive : linkInactive}`}
+              className={({ isActive }) =>
+                `${linkBase} ${isActive ? active : inactive}`
+              }
             >
               Dashboard
             </NavLink>
             <NavLink
               to="/content"
-              className={({ isActive }) => `${linkBase} ${isActive ? linkActive : linkInactive}`}
+              className={({ isActive }) =>
+                `${linkBase} ${isActive ? active : inactive}`
+              }
             >
               Content
             </NavLink>
             <NavLink
               to="/audits"
-              className={({ isActive }) => `${linkBase} ${isActive ? linkActive : linkInactive}`}
+              className={({ isActive }) =>
+                `${linkBase} ${isActive ? active : inactive}`
+              }
             >
               Audits
             </NavLink>
             <NavLink
               to="/seo-reports"
-              className={({ isActive }) => `${linkBase} ${isActive ? linkActive : linkInactive}`}
+              className={({ isActive }) =>
+                `${linkBase} ${isActive ? active : inactive}`
+              }
             >
               SEO Reports
             </NavLink>
           </nav>
         </div>
 
-        {/* Right: avatar + dropdown */}
+        {/* Right */}
         <div className="relative" ref={menuRef}>
           <button
             onClick={() => setOpen((o) => !o)}
@@ -98,9 +102,9 @@ export default function Navigation({ currentUser }) {
             className="flex items-center gap-2 focus:outline-none"
             title={email}
           >
-            {currentUser?.photoURL ? (
+            {photoURL ? (
               <img
-                src={currentUser.photoURL}
+                src={photoURL}
                 alt={name || email}
                 className="h-9 w-9 rounded-full object-cover border border-gray-200"
               />
@@ -114,12 +118,13 @@ export default function Navigation({ currentUser }) {
           {open && (
             <div
               role="menu"
-              className="absolute right-0 top-full mt-2 w-64 bg-white rounded-xl shadow-xl ring-1 ring-black/5 z-[1000] overflow-hidden"
+              className="absolute right-0 mt-2 w-60 bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden z-50"
             >
-              {/* Role badge */}
-              {!!role && (
-                <div className="px-4 py-2 text-sm font-semibold text-purple-700 bg-purple-50 border-b border-gray-200">
-                  {role.charAt(0).toUpperCase() + role.slice(1)}
+              {rolePrimary && (
+                <div className="px-3 py-2 bg-gray-50 border-b border-gray-200">
+                  <span className="px-2 py-0.5 rounded-full text-xs font-semibold text-purple-700 bg-purple-100">
+                    {rolePrimary.charAt(0).toUpperCase() + rolePrimary.slice(1)}
+                  </span>
                 </div>
               )}
 
@@ -128,21 +133,21 @@ export default function Navigation({ currentUser }) {
                   setOpen(false);
                   navigate("/profile");
                 }}
-                className="w-full text-left px-4 py-2.5 text-base text-gray-800 hover:bg-gray-50"
-                role="menuitem"
+                className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100"
               >
                 Profile
+                <div className="text-xs text-gray-500 truncate">{email}</div>
               </button>
 
               {isAdmin && (
                 <>
+                  <div className="my-1 border-t border-gray-200" />
                   <button
                     onClick={() => {
                       setOpen(false);
                       navigate("/users");
                     }}
-                    className="w-full text-left px-4 py-2.5 text-base text-gray-800 hover:bg-gray-50"
-                    role="menuitem"
+                    className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100"
                   >
                     Manage Users
                   </button>
@@ -151,24 +156,21 @@ export default function Navigation({ currentUser }) {
                       setOpen(false);
                       navigate("/workspaces");
                     }}
-                    className="w-full text-left px-4 py-2.5 text-base text-gray-800 hover:bg-gray-50"
-                    role="menuitem"
+                    className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100"
                   >
                     Manage Workspaces
                   </button>
                 </>
               )}
 
-              <div className="my-1 h-px bg-gray-200" />
-
+              <div className="my-1 border-t border-gray-200" />
               <button
                 onClick={async () => {
                   setOpen(false);
                   await signOut(auth);
                   navigate("/login");
                 }}
-                className="w-full text-left px-4 py-2.5 text-base text-red-600 hover:bg-red-50"
-                role="menuitem"
+                className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50"
               >
                 Sign Out
               </button>
