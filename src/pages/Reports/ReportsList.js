@@ -73,84 +73,70 @@ export default function ReportsList() {
   </div>
 </div>
 
-      {/* Cards */}
-      <div className="space-y-5">
-        {mockReportIndex.map((r) => {
-          const utilization = Math.round((r.usedCredits / r.totalCredits) * 100);
-          const barColor = r.isCurrent ? "bg-blue-600" : "bg-green-600";
-          const barTrack = "bg-gray-200";
+{mockReportIndex.map((r) => {
+  const utilization = Math.round((r.usedCredits / r.totalCredits) * 100);
+  const barColor = r.isCurrent ? "bg-blue-600" : "bg-green-600";
 
-          return (
-<div
-  key={r.id}
-  className={`bg-white rounded-xl border ${
-    r.isCurrent ? "border-blue-300" : "border-gray-200"
-  } shadow-sm`}
->
-  <div className="p-5 flex flex-col h-full">
-    {/* Top row */}
-    <div className="flex items-center justify-between">
-      <div className="text-xl font-semibold text-gray-900">
-        {r.monthLabel}
+  return (
+    <div
+      key={r.id}
+      className="bg-white rounded-xl border border-gray-200 shadow-sm p-5 flex flex-col h-full"
+    >
+      {/* Title + Date */}
+      <div className="mb-4">
+        <h2 className="text-xl font-semibold text-gray-900">{r.monthLabel}</h2>
+        <p className="text-sm text-gray-500">
+          Created on{" "}
+          {new Date(r.lastUpdated).toLocaleDateString(undefined, {
+            month: "short",
+            day: "2-digit",
+            year: "numeric",
+          })}
+        </p>
       </div>
-      <div className="flex items-center gap-3">
-        {r.isCurrent && (
-          <span className="px-3 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-700">
-            Current
-          </span>
-        )}
-        <div className="text-sm font-semibold text-gray-900">
-          {utilization}%
+
+      {/* Stats Row */}
+      <div className="grid grid-cols-3 gap-4 text-center mb-4">
+        <div className="bg-gray-50 rounded-lg p-4">
+          <div className="text-2xl font-bold text-gray-900">{r.deliverables}</div>
+          <div className="text-xs text-gray-500 mt-1">Deliverables</div>
+        </div>
+        <div className="bg-blue-50 rounded-lg p-4">
+          <div className="text-2xl font-bold text-blue-700">{r.usedCredits}</div>
+          <div className="text-xs text-gray-500 mt-1">Credits Used</div>
+        </div>
+        <div className="bg-indigo-50 rounded-lg p-4">
+          <div className="text-2xl font-bold text-indigo-700">{r.totalCredits}</div>
+          <div className="text-xs text-gray-500 mt-1">Monthly Credits</div>
         </div>
       </div>
-    </div>
 
-    {/* Utilization bar */}
-    <div className="mt-3">
-      <div className={`w-full ${barTrack} h-2 rounded-full`}>
-        <div
-          className={`${barColor} h-2 rounded-full transition-all`}
-          style={{ width: `${utilization}%` }}
-        />
-      </div>
-    </div>
-
-    {/* Stats row */}
-    <div className="mt-5 grid grid-cols-2 gap-6 text-center">
-      <div>
-        <div className="text-3xl font-bold text-gray-900">
-          {r.deliverables}
+      {/* Utilization bar */}
+      <div className="flex-1">
+        <div className="text-xs text-gray-500 mb-1">Credit Utilization</div>
+        <div className="w-full bg-gray-200 rounded-full h-2">
+          <div
+            className={`${barColor} h-2 rounded-full transition-all`}
+            style={{ width: `${utilization}%` }}
+          />
         </div>
-        <div className="text-xs text-gray-500 mt-1">Deliverables</div>
       </div>
-      <div>
-        <div className="text-3xl font-bold text-blue-700">
-          {r.usedCredits}
-        </div>
-        <div className="text-xs text-gray-500 mt-1">Credits Used</div>
-      </div>
-    </div>
 
-    {/* Footer row (date left, link right) */}
-    <div className="mt-6 flex items-center justify-between text-sm text-gray-500">
-      <div className="flex items-center gap-2">
-        <Calendar className="w-4 h-4" />
-        {new Date(r.lastUpdated).toLocaleDateString(undefined, {
-          month: "short",
-          day: "2-digit",
-          year: "numeric",
-        })}
+      {/* Footer link */}
+      <div className="mt-4 flex justify-end">
+        <button
+          onClick={() => navigate(`/seo-reports/${r.id}`)}
+          className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 font-medium text-sm"
+        >
+          View Report
+          <ArrowRight className="w-4 h-4" />
+        </button>
       </div>
-      <button
-        onClick={() => navigate(`/seo-reports/${r.id}`)}
-        className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 font-medium text-sm"
-      >
-        View Report
-        <ArrowRight className="w-4 h-4" />
-      </button>
     </div>
-  </div>
-</div>
+  );
+})}
+
+
 
           );
         })}
