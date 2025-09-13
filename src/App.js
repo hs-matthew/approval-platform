@@ -10,7 +10,7 @@ import Footer from "./components/layout/Footer";
 import { WorkspaceProvider, useWorkspace } from "./context/WorkspaceContext";
 
 // Hooks
-import { useAuth } from "./hooks/useAuth";
+import useCurrentUser from "./hooks/useCurrentUser";
 import { useFirestore } from "./hooks/useFirestore";
 import { useSubmissions } from "./hooks/useSubmissions";
 
@@ -40,7 +40,7 @@ export default function App() {
 }
 
 function ApprovalPlatform() {
-  const { currentUser } = useAuth();
+  const { currentUser, loading: userLoading } = useCurrentUser();
 
   // Local UI state
   const [selectedSubmission, setSelectedSubmission] = useState(null);
@@ -60,7 +60,7 @@ function ApprovalPlatform() {
     loading: submissionsLoading,
   } = useSubmissions(workspaces);
 
-  const isLoading = usersLoading || workspacesLoading || submissionsLoading;
+  const isLoading = userLoading || usersLoading || workspacesLoading || submissionsLoading;
 
   const handleSelectSubmission = (submission) => setSelectedSubmission(submission);
 
