@@ -15,6 +15,7 @@ import ProtectedLayout from "./components/layout/ProtectedLayout";
 import { useAuth } from "./hooks/useAuth";
 import { useFirestore } from "./hooks/useFirestore";
 import { useSubmissions } from "./hooks/useSubmissions";
+import AuditDetail from "./pages/Audits/AuditDetail";
 
 const Loading = () => (
   <div className="max-w-4xl mx-auto p-6">
@@ -141,7 +142,7 @@ export default function App() {
       <Route path="/seo-reports" element={<ReportsList />} />
       <Route path="/seo-reports/:id" element={<MonthlySEOReport />} />
       <Route path="/audits" element={<AuditsList />} />
-      <Route path="/audits/:id" element={<div className='max-w-6xl mx-auto p-6'>Audit detail coming soon…</div>} />
+      <Route path="/audits/:id" element={<AuditDetail />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/content" replace />} />
