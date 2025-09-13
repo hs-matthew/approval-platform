@@ -1,9 +1,183 @@
 // src/pages/Users/UserForm.js
 import React, { useMemo, useState } from "react";
-import { UserPlus, Users, Shield, Edit, Mail, AlertCircle, CheckCircle, Building2, CheckSquare } from "lucide-react";
+import { UserPlus, Users, Shield, Edit, Mail, AlertCircle, CheckCircle, CheckSquare, Building2 } from "lucide-react";
+
+/* =========================
+   Searchable Chips Multi-Select
+   ========================= */
+function WorkspaceMultiSelect({
+  options = [],            // [{ id, name }]
+  value = [],              // array of ids
+  onChange = () => {},
+  disabled = false,
+  placeholder = "Search workspaces…",
+  label = "Assign Workspaces",
+  required = false,
+  error = ""
+}) {
+  const [open, setOpen] = React.useState(false);
+  const [query, setQuery] = React.useState("");
+  const [activeIndex, setActiveIndex] = React.useState(-1);
+
+  const idToName = React.useMemo(() => {
+    const m = new Map();
+    for (const o of options) m.set(o.id, o.name || o.id);
+    return m;
+  }, [options]);
+
+  const filtered = React.useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return options.filter(o => !value.includes(o.id));
+    return options.filter(
+      o =>
+        !value.includes(o.id) &&
+        (o.name?.toLowerCase().includes(q) || o.id.toLowerCase().includes(q))
+    );
+  }, [options, value, query]);
+
+  const add = (id) => {
+    if (disabled) return;
+    if (!value.includes(id)) onChange([...value, id]);
+    setQuery("");
+    setActiveIndex(-1);
+  };
+
+  const remove = (id) => {
+    if (disabled) return;
+    onChange(value.filter(v => v !== id));
+  };
+
+  const onKeyDown = (e) => {
+    if (!open && (e.key === "ArrowDown" || e.key === "Enter")) {
+      setOpen(true);
+      return;
+    }
+    if (!open) return;
+
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setActiveIndex((i) => Math.min(i + 1, filtered.length - 1));
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setActiveIndex((i) => Math.max(i - 1, 0));
+    } else if (e.key === "Enter") {
+      e.preventDefault();
+      const pick = filtered[activeIndex] || filtered[0];
+      if (pick) add(pick.id);
+    } else if (e.key === "Escape") {
+      setOpen(false);
+    }
+  };
+
+  // Close when clicking outside
+  const containerRef = React.useRef(null);
+  React.useEffect(() => {
+    const onClick = (e) => {
+      if (!containerRef.current) return;
+      if (!containerRef.current.contains(e.target)) setOpen(false);
+    };
+    document.addEventListener("mousedown", onClick);
+    return () => document.removeEventListener("mousedown", onClick);
+  }, []);
+
+  return (
+    <div className="relative" ref={containerRef}>
+      <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+        <Building2 className="w-4 h-4" />
+        {label}{required ? " *" : " (optional)"}
+      </label>
+
+      {/* Selected chips */}
+      {value.length > 0 && (
+        <div className="mb-2 flex flex-wrap gap-2">
+          {value.map((id) => (
+            <span
+              key={id}
+              className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full text-xs bg-blue-50 text-blue-800 border border-blue-200"
+            >
+              {idToName.get(id) || id}
+              <button
+                type="button"
+                onClick={() => remove(id)}
+                disabled={disabled}
+                className="hover:text-blue-900"
+                aria-label={`Remove ${idToName.get(id) || id}`}
+              >
+                ×
+              </button>
+            </span>
+          ))}
+        </div>
+      )}
+
+      {/* Input */}
+      <div
+        className={`w-full flex items-center gap-2 px-3 py-2 border rounded-md focus-within:ring-2 ${
+          error ? "border-red-300 ring-red-500" : "border-gray-300 ring-blue-500"
+        } ${disabled ? "bg-gray-50 opacity-75" : ""}`}
+        onClick={() => !disabled && setOpen(true)}
+      >
+        <input
+          type="text"
+          value={query}
+          onChange={(e) => { setQuery(e.target.value); setOpen(true); }}
+          onKeyDown={onKeyDown}
+          disabled={disabled}
+          placeholder={placeholder}
+          className="w-full outline-none bg-transparent text-sm"
+        />
+        <button
+          type="button"
+          onClick={() => !disabled && setOpen((o) => !o)}
+          className="text-gray-600"
+          aria-label="Toggle workspace list"
+        >
+          ▾
+        </button>
+      </div>
+      {error && <p className="mt-1 text-sm text-red-600">{error}</p>}
+
+      {/* Dropdown */}
+      {open && (
+        <div className="absolute z-10 mt-1 w-full max-h-60 overflow-auto rounded-md border border-gray-200 bg-white shadow-lg">
+          {filtered.length === 0 ? (
+            <div className="px-3 py-2 text-sm text-gray-500">No matches</div>
+          ) : (
+            <ul role="listbox" className="py-1">
+              {filtered.map((o, idx) => (
+                <li
+                  key={o.id}
+                  role="option"
+                  aria-selected={idx === activeIndex}
+                  onMouseEnter={() => setActiveIndex(idx)}
+                  onMouseLeave={() => setActiveIndex(-1)}
+                  onClick={() => add(o.id)}
+                  className={`px-3 py-2 cursor-pointer text-sm ${
+                    idx === activeIndex ? "bg-blue-50" : "hover:bg-gray-50"
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-900">{o.name || o.id}</span>
+                    <span className="text-xs text-gray-500">{o.id}</span>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* =========================
+   User Form (Drop-in)
+   ========================= */
 
 const ROLES = ["owner", "admin", "staff", "client", "collaborator"]; // global roles
-const PERM_KEYS = ["content", "audits", "reports"];                  // per-workspace, only for collaborators
+const PERM_KEYS = ["content", "audits", "reports"];                  // per-workspace (for collaborators)
+
+const cap = (s) => s.charAt(0).toUpperCase() + s.slice(1);
 
 const UserForm = ({
   users = [],
@@ -18,47 +192,54 @@ const UserForm = ({
     initialValues ?? {
       name: "",
       email: "",
-      role: "collaborator",   // default to collaborator
-      workspaceIds: [],       // MULTI-select of workspaces
-      // per-workspace permission template for collaborators
-      collaboratorPerms: { content: true, audits: false, reports: false }
+      role: "collaborator",   // default
+      workspaceIds: [],       // multi-select
+      collaboratorPerms: { content: true, audits: false, reports: false },
     }
   );
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [validationErrors, setValidationErrors] = useState({});
   const [showSuccess, setShowSuccess] = useState(false);
 
-  const workspacesById = useMemo(() => {
-    const m = {};
-    (workspaces || []).forEach(w => { m[w.id] = w; });
-    return m;
-  }, [workspaces]);
+  useMemo(() => workspaces, [workspaces]); // quiet lints; list is passed in
 
-  // helpers
+  // icons/descriptions
+  const getRoleIcon = (role) => {
+    switch (role) {
+      case "owner": return <Shield className="w-4 h-4" />;
+      case "admin": return <Shield className="w-4 h-4" />;
+      case "staff": return <Users className="w-4 h-4" />;
+      case "client": return <Users className="w-4 h-4" />;
+      case "collaborator": return <Edit className="w-4 h-4" />;
+      default: return <Users className="w-4 h-4" />;
+    }
+  };
+  const getRoleDescription = (role) => {
+    switch (role) {
+      case "owner": return "All permissions, including account deletion.";
+      case "admin": return "Full admin features across the app.";
+      case "staff": return "Internal team access.";
+      case "client": return "Can approve/view items in assigned workspaces.";
+      case "collaborator": return "Granular permissions per assigned workspace.";
+      default: return "";
+    }
+  };
+
   const handleInput = (field, value) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    setFormData((prev) => ({ ...prev, [field]: value }));
     if (validationErrors[field]) {
       const next = { ...validationErrors }; delete next[field]; setValidationErrors(next);
     }
     if (showSuccess) setShowSuccess(false);
   };
 
-  const toggleWorkspace = (wid) => {
-    setFormData(prev => {
-      const set = new Set(prev.workspaceIds);
-      set.has(wid) ? set.delete(wid) : set.add(wid);
-      return { ...prev, workspaceIds: Array.from(set) };
-    });
-  };
-
   const togglePerm = (key) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      collaboratorPerms: { ...prev.collaboratorPerms, [key]: !prev.collaboratorPerms[key] }
+      collaboratorPerms: { ...prev.collaboratorPerms, [key]: !prev.collaboratorPerms[key] },
     }));
   };
 
-  // validation
   const validate = () => {
     const e = {};
     const name = (formData.name || "").trim();
@@ -70,11 +251,11 @@ const UserForm = ({
 
     if (!email) e.email = "Email is required";
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) e.email = "Enter a valid email";
-    else if (users.find(u => (u.email || "").toLowerCase() === email)) e.email = "A user with this email already exists";
+    else if (users.find((u) => (u.email || "").toLowerCase() === email)) e.email = "A user with this email already exists";
 
     if (!ROLES.includes(formData.role)) e.role = "Select a valid role";
 
-    // must pick at least one workspace for all roles except owner/admin (your choice)
+    // require at least one workspace for roles other than owner/admin
     const requiresWorkspace = !["owner", "admin"].includes(formData.role);
     if (requiresWorkspace && formData.workspaceIds.length === 0) {
       e.workspaceIds = "Select at least one workspace";
@@ -84,35 +265,30 @@ const UserForm = ({
     return Object.keys(e).length === 0;
   };
 
-  // submit
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validate()) return;
-
     setIsSubmitting(true);
     try {
       const payload = {
         name: formData.name.trim(),
         email: formData.email.trim().toLowerCase(),
-        role: formData.role,                 // global role
-        workspaceIds: formData.workspaceIds, // array (can be empty for owner/admin)
-        // send collaborator perms only if applicable
+        role: formData.role,
+        workspaceIds: formData.workspaceIds,
         collaboratorPerms: formData.role === "collaborator" ? formData.collaboratorPerms : null,
         createdAt: new Date().toISOString(),
         isActive: true,
         lastLogin: null,
-        createdBy: "system"
+        createdBy: "system",
       };
-
       await onAddUser(payload);
 
-      // reset
       setFormData({
         name: "",
         email: "",
         role: "collaborator",
         workspaceIds: [],
-        collaboratorPerms: { content: true, audits: false, reports: false }
+        collaboratorPerms: { content: true, audits: false, reports: false },
       });
       setValidationErrors({});
       setShowSuccess(true);
@@ -133,7 +309,7 @@ const UserForm = ({
             <UserPlus className="w-5 h-5 text-blue-600" />
             Add New User
           </h3>
-          <p className="text-sm text-gray-600">Create a user, assign workspaces, and set permissions (for collaborators).</p>
+          <p className="text-sm text-gray-600">Create a user, assign workspaces, and (if collaborator) set permissions.</p>
         </div>
       )}
 
@@ -192,7 +368,7 @@ const UserForm = ({
           {validationErrors.email && <p className="mt-1 text-sm text-red-600">{validationErrors.email}</p>}
         </div>
 
-        {/* Global Role */}
+        {/* Global Role (capitalized options) */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">User Role *</label>
           <select
@@ -203,53 +379,45 @@ const UserForm = ({
             }`}
             disabled={isSubmitting}
           >
-            {ROLES.map(r => <option key={r} value={r}>{r}</option>)}
+            {ROLES.map((r) => (
+              <option key={r} value={r}>{cap(r)}</option>
+            ))}
           </select>
+          <div className="mt-2 p-3 bg-gray-50 rounded-md border border-gray-200">
+            <div className="flex items-center gap-2 mb-1">
+              {getRoleIcon(formData.role)}
+              <span className="text-sm font-medium text-gray-900">{cap(formData.role)}</span>
+            </div>
+            <p className="text-xs text-gray-600">{getRoleDescription(formData.role)}</p>
+          </div>
+          {validationErrors.role && <p className="mt-1 text-sm text-red-600">{validationErrors.role}</p>}
+        </div>
+
+        {/* Workspaces (searchable multi-select with chips) */}
+        <div>
+          <WorkspaceMultiSelect
+            options={workspaces}
+            value={formData.workspaceIds}
+            onChange={(ids) => handleInput("workspaceIds", ids)}
+            disabled={isSubmitting}
+            label="Assign Workspaces"
+            required={!["owner", "admin"].includes(formData.role)}
+            error={validationErrors.workspaceIds || ""}
+            placeholder="Type to search…"
+          />
           <p className="text-xs text-gray-500 mt-2">
-            <strong>owner</strong> (all permissions, incl. account deletion) · <strong>admin</strong> (all app features) ·{" "}
-            <strong>staff</strong> (internal team) · <strong>client</strong> (approve/view) ·{" "}
-            <strong>collaborator</strong> (granular per-workspace).
+            Start typing to filter. Press Enter to add the highlighted item. Click × on a chip to remove.
           </p>
         </div>
 
-        {/* Workspace selection (multi) */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
-            <Building2 className="w-4 h-4" /> Assign Workspaces{["owner","admin"].includes(formData.role) ? " (optional)" : " *"}
-          </label>
-
-          {workspaces.length === 0 ? (
-            <p className="text-sm text-gray-500">No workspaces found.</p>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              {workspaces.map(ws => {
-                const checked = formData.workspaceIds.includes(ws.id);
-                return (
-                  <label key={ws.id} className={`flex items-center gap-2 border rounded-md px-3 py-2 cursor-pointer ${checked ? "bg-blue-50 border-blue-300" : "bg-white border-gray-300"}`}>
-                    <input
-                      type="checkbox"
-                      checked={checked}
-                      onChange={() => toggleWorkspace(ws.id)}
-                      disabled={isSubmitting}
-                    />
-                    <span className="text-sm">{ws.name || ws.id}</span>
-                  </label>
-                );
-              })}
-            </div>
-          )}
-
-          {validationErrors.workspaceIds && <p className="mt-1 text-sm text-red-600">{validationErrors.workspaceIds}</p>}
-        </div>
-
-        {/* Collaborator permissions (only shows if role === collaborator) */}
+        {/* Collaborator permissions (checkboxes) */}
         {formData.role === "collaborator" && (
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
               <CheckSquare className="w-4 h-4" /> Permissions (for selected workspaces)
             </label>
             <div className="flex flex-wrap gap-3">
-              {PERM_KEYS.map(key => (
+              {PERM_KEYS.map((key) => (
                 <label key={key} className="inline-flex items-center gap-2 border rounded px-3 py-1.5">
                   <input
                     type="checkbox"
@@ -261,9 +429,7 @@ const UserForm = ({
                 </label>
               ))}
             </div>
-            <p className="text-xs text-gray-500 mt-2">
-              These apply to each assigned workspace for this collaborator.
-            </p>
+            <p className="text-xs text-gray-500 mt-2">These apply to each assigned workspace.</p>
           </div>
         )}
 
@@ -290,7 +456,9 @@ const UserForm = ({
             </button>
           )}
           <div className="ml-auto text-xs text-gray-500">
-            {Object.keys(validationErrors).length > 0 && <span className="text-red-600 mr-2">{Object.keys(validationErrors).length} error(s)</span>}
+            {Object.keys(validationErrors).length > 0 && (
+              <span className="text-red-600 mr-2">{Object.keys(validationErrors).length} error(s)</span>
+            )}
             <span>* Required fields</span>
           </div>
         </div>
@@ -301,7 +469,7 @@ const UserForm = ({
           <Mail className="w-4 h-4" /> Next Steps
         </h4>
         <ul className="text-xs text-blue-800 space-y-1">
-          <li>• An invite record will be created for the email</li>
+          <li>• An invite record will be created for this email</li>
           <li>• On first login, the account will be linked to the selected workspaces</li>
           <li>• Collaborator permissions apply per assigned workspace</li>
         </ul>
