@@ -1,4 +1,4 @@
-// src/pages/Reports/MonthlySEOReport.js
+// src/pages/Reports/ReportDetail.js
 import React, { useRef, useState } from "react";
 import {
   Upload,
@@ -117,7 +117,7 @@ const deliverableColors = {
   technical: "bg-teal-50 border-teal-200 text-teal-800",
 };
 
-export default function MonthlySEOReport() {
+export default function ReportDetail() {
   const { id } = useParams(); // e.g., "2025-11"
   const header = mockReportIndex.find((r) => r.id === id);
 
