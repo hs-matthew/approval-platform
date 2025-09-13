@@ -24,6 +24,7 @@ import ReviewSubmission from "./pages/ReviewSubmission/ReviewSubmission";
 import Users from "./pages/Users/Users";
 import AddUser from "./pages/Users/AddUser";
 import EditUser from "./pages/Users/EditUser";
+import UserProfile from "./pages/Users/UserProfile";
 import ProfileEdit from "./pages/Users/ProfileEdit";
 
 import ReportsList from "./pages/Reports/ReportsList";
@@ -236,6 +237,7 @@ function LoginPlaceholder() {
 <Route path="/users" element={<Users />} />
 <Route path="/users/new" element={<AddUser />} />
 <Route path="/users/:id/edit" element={<EditUser />} />
+<Route path="/profile" element={<UserProfile />} />
 <Route path="/profile" element={<ProfileEdit />} />
 
       {/* Admin */}
