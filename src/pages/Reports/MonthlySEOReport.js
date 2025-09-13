@@ -10,6 +10,7 @@ import {
   Link as LinkIcon,
   FileText,
   MapPin,
+  ArrowLeft,
   Globe,
 } from "lucide-react";
 import { useParams } from "react-router-dom";
@@ -161,6 +162,16 @@ export default function MonthlySEOReport() {
 
   return (
     <div className="max-w-6xl mx-auto p-6">
+        {/* Back link */}
+  <div className="mb-4">
+    <Link
+      to="/seo-reports"
+      className="inline-flex items-center text-blue-600 hover:text-blue-800 text-sm font-medium"
+    >
+      <ArrowLeft className="w-4 h-4 mr-1" />
+      Back to Reports
+    </Link>
+  </div>
       {/* Header */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
         <div className="flex items-center justify-between mb-4">
