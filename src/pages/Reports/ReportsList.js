@@ -130,7 +130,7 @@ export default function ReportsList() {
               {/* Footer link pinned at bottom-right */}
               <div className="mt-4 flex justify-end">
                 <Link
-                  to={`/seo-reports/${r.id}`}
+                  to={`/reports/${r.id}`}
                   className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 font-medium text-sm"
                   aria-label={`View report for ${r.monthLabel}`}
                 >
