@@ -367,12 +367,12 @@ const UserForm = ({
         <div className="mb-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-2 flex items-center gap-2">
             {isEdit ? <Edit className="w-5 h-5 text-blue-600" /> : <UserPlus className="w-5 h-5 text-blue-600" />}
-            {isEdit ? "Edit User" : "Send Invite"}
+            {isEdit ? "Edit User" : "Add New User"}
           </h3>
           <p className="text-sm text-gray-600">
             {isEdit
               ? "Update user details, workspaces, and (if collaborator) permissions."
-              : "Create a user, assign workspaces, and (if collaborator) set permissions."}
+              : "Create a user, assign workspaces, and (if collaborator) set permissions. Send an invite."}
           </p>
         </div>
       )}
@@ -529,7 +529,7 @@ const UserForm = ({
             }`}
           >
             <UserPlus className="w-4 h-4" />
-            {isSubmitting ? (isEdit ? "Saving…" : "Creating…") : (isEdit ? "Save Changes" : "Create User")}
+            {isSubmitting ? (isEdit ? "Saving…" : "Creating…") : (isEdit ? "Save Changes" : "Send Invite")}
           </button>
           {onCancel && (
             <button
