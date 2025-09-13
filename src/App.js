@@ -1,7 +1,7 @@
 // src/App.js
 import React, { useState } from "react";
 import { Routes, Route, Navigate, useNavigate } from "react-router-dom";
-
+import AuditsList from "./pages/Audits/AuditsList";
 import Login from "./pages/Auth/Login";
 import Dashboard from "./pages/Dashboard/Dashboard";     // placeholder now
 import ContentPage from "./pages/Content/Content";        // NEW file (moved from Dashboard)
@@ -138,9 +138,10 @@ export default function App() {
         />
 
         {/* Other placeholders */}
-        <Route path="/audits" element={<div className="max-w-6xl mx-auto p-6">Audits (placeholder)</div>} />
         <Route path="/seo-reports" element={<ReportsList />} />
 <Route path="/seo-reports/:id" element={<MonthlySEOReport />} />
+          <Route path="/audits" element={<AuditsList />} />
+<Route path="/audits/:id" element={<div className='max-w-6xl mx-auto p-6'>Audit detail coming soon…</div>} />
       </Route>
 
       <Route path="*" element={<Navigate to="/content" replace />} />
