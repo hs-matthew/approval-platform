@@ -12,7 +12,32 @@ import {
   MapPin,
   Globe,
 } from 'lucide-react';
+import { useParams } from "react-router-dom";
+import { mockReportIndex } from "./ReportsList"; // reuse the index list
 
+export default function MonthlySEOReport() {
+  const { id } = useParams(); // e.g., "2025-11"
+  // Optional: use id to customize the header fields
+  const header = mockReportIndex.find((r) => r.id === id) || {
+    monthLabel: "November 2024",
+    package: "40 Credits Package",
+    totalCredits: 40,
+    usedCredits: 37,
+    remainingCredits: 3,
+  };
+
+  // set the base mock data (your existing mockMonthlyData)
+  const [reportData, setReportData] = useState({
+    ...mockMonthlyData,
+    month: header.monthLabel.replace(/^\w+ /, "") ? header.monthLabel : mockMonthlyData.month,
+    package: mockMonthlyData.package,
+    totalCredits: header.totalCredits ?? mockMonthlyData.totalCredits,
+    usedCredits: header.usedCredits ?? mockMonthlyData.usedCredits,
+    remainingCredits:
+      (header.totalCredits ?? mockMonthlyData.totalCredits) -
+      (header.usedCredits ?? mockMonthlyData.usedCredits),
+  });
+  
 // Mock monthly report data (use backticks so apostrophes are safe)
 const mockMonthlyData = {
   month: 'November 2024',
