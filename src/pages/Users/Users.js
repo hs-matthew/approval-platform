@@ -5,6 +5,7 @@ import { useFirestore } from "../../hooks/useFirestore";
 import { db } from "../../lib/firebase";
 import { doc, deleteDoc } from "firebase/firestore";
 import { Plus, Pencil, Trash2, Search } from "lucide-react";
+import { addUserWithInvite } from "./usersActions";
 
 function RoleBadge({ role }) {
   const map = {
