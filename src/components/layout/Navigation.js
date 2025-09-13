@@ -120,7 +120,7 @@ export default function Navigation({ currentUser }) {
           {open && (
             <div
               role="menu"
-              className="absolute right-0 top-[54px] w-72 max-w-[90vw] bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden z-50"
+              className="absolute right-0 top-[54px] w-80 sm:w-96 max-w-[95vw] bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden z-50"
             >
               {/* Role chip */}
               {rolePrimary && (
