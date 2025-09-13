@@ -147,7 +147,7 @@ export default function Navigation({ currentUser }) {
               <div className="my-2 border-t border-gray-200" />
 
 <button
-  onClick={() => { setOpen(false); navigate("/UserProfile"); }}
+  onClick={() => { setOpen(false); navigate("/Profile"); }}
   className="w-full flex items-center justify-between px-4 py-2 hover:bg-gray-100"
 >
   <div className="flex flex-col items-start text-left">
