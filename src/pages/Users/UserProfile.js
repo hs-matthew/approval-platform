@@ -43,10 +43,14 @@ function dataURLtoBlob(dataURL) {
 function Editable({
   label,
   icon: Icon,
-  type = "text",            // 'text' | 'tel' | 'textarea'
+  type = "text",
   value,
-  onSave,                   // async (next) => void
+  onSave,
   placeholder = "",
+  displayAs,
+  displayClass = "",
+  inputClass = "",
+  textareaClass = "",
 }) {
   const [editing, setEditing] = useState(false);
   const [next, setNext] = useState(value || "");
@@ -79,6 +83,8 @@ function Editable({
     }
   };
 
+  const DisplayTag = displayAs || "div";
+
   return (
     <div className="flex items-start gap-3">
       {Icon && <Icon className="w-5 h-5 text-gray-400 mt-1" />}
@@ -87,14 +93,15 @@ function Editable({
 
         {!editing ? (
           <div className="group flex items-center gap-2">
-            <div className={`text-gray-700 ${value ? "" : "text-gray-400 italic"}`}>
+            <DisplayTag className={displayClass || "text-gray-700"}>
               {value || placeholder || "Not provided"}
-            </div>
+            </DisplayTag>
             <button
               type="button"
               onClick={() => setEditing(true)}
               className="opacity-0 group-hover:opacity-100 transition text-gray-400 hover:text-gray-600"
-              aria-label={`Edit ${label}`}
+              aria-label={`Edit ${label || "field"}`}
+              title="Edit"
             >
               <Edit3 className="w-4 h-4" />
             </button>
@@ -110,7 +117,7 @@ function Editable({
                 onKeyDown={onKey}
                 onBlur={commit}
                 placeholder={placeholder}
-                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className={`w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 ${textareaClass}`}
               />
             ) : (
               <input
@@ -121,7 +128,7 @@ function Editable({
                 onKeyDown={onKey}
                 onBlur={commit}
                 placeholder={placeholder}
-                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className={`w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 ${inputClass}`}
               />
             )}
 
@@ -160,7 +167,7 @@ export default function UserProfile() {
   const [fsProfile, setFsProfile] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // avatar state (optional crop/upload flow retained)
+  // avatar state
   const [showCrop, setShowCrop] = useState(false);
   const [selectedImage, setSelectedImage] = useState(null);
   const [croppedImage, setCroppedImage] = useState(null);
@@ -215,7 +222,7 @@ export default function UserProfile() {
 
   const avatar = (croppedImage || fsProfile?.photoURL) ?? null;
 
-  /* --- Avatar handlers (optional) --- */
+  /* --- Avatar handlers --- */
   const onPick = (e) => {
     const f = e.target.files?.[0]; if (!f) return;
     const r = new FileReader();
@@ -281,17 +288,25 @@ export default function UserProfile() {
 
   return (
     <div className="max-w-4xl mx-auto p-6 space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">User Profile</h1>
-          <p className="text-gray-600">Click a field to edit it inline.</p>
-        </div>
-      </div>
-
       {/* Profile Card */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-        <div className="h-32 bg-gradient-to-r from-blue-500 to-purple-600" />
+        {/* Cover background */}
+        <div className="relative h-32 bg-gradient-to-r from-blue-500 to-purple-600">
+          {/* Joined date (top-left) */}
+          <div className="absolute top-2 left-4 text-xs text-white/90 font-medium">
+            Joined {formatDate(createdAt)}
+          </div>
+
+          {/* Role badge (top-right) */}
+          <div className="absolute top-2 right-4">
+            <span className={`px-3 py-1 rounded-full text-sm font-medium border ${roleColor(fsProfile?.role)}`}>
+              <Shield className="w-4 h-4 inline mr-1" />
+              {(fsProfile?.role || "collaborator").replace(/^\w/, (c) => c.toUpperCase())}
+            </span>
+          </div>
+        </div>
+
+        {/* Body */}
         <div className="relative px-6 pb-6">
           {/* Avatar */}
           <div className="relative -mt-16 mb-4">
@@ -316,26 +331,21 @@ export default function UserProfile() {
             </div>
           </div>
 
-          {/* Name & Role row */}
-          <div className="flex items-center gap-4 mb-4">
-            <div className="min-w-0 flex-1">
-              <Editable
-                label="Name"
-                icon={null}
-                type="text"
-                value={fsProfile?.name}
-                onSave={saveName}
-                placeholder="Your name"
-              />
-            </div>
-            <span className={`px-3 py-1 rounded-full text-sm font-medium border ${roleColor(fsProfile?.role)}`}>
-              <Shield className="w-4 h-4 inline mr-1" />
-              {(fsProfile?.role || "collaborator").replace(/^\w/, c => c.toUpperCase())}
-            </span>
-          </div>
+          {/* Name (editable, styled as h2) */}
+          <Editable
+            label={null}
+            icon={null}
+            type="text"
+            value={fsProfile?.name}
+            onSave={saveName}
+            placeholder="Your name"
+            displayAs="h2"
+            displayClass="text-3xl font-extrabold text-gray-900"
+            inputClass="text-3xl font-extrabold"
+          />
 
-          {/* Details grid (Email + Phone + Joined) */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Details grid (Email + Phone) */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
             <div className="flex items-center gap-3">
               <Mail className="w-5 h-5 text-gray-400" />
               <span className="text-gray-700">{fsProfile?.email || user.email}</span>
@@ -349,11 +359,6 @@ export default function UserProfile() {
               onSave={savePhone}
               placeholder="Add a phone number"
             />
-
-            <div className="flex items-center gap-3">
-              <Calendar className="w-5 h-5 text-gray-400" />
-              <span className="text-gray-700">Joined {formatDate(createdAt)}</span>
-            </div>
           </div>
 
           {/* Bio */}
@@ -370,7 +375,7 @@ export default function UserProfile() {
         </div>
       </div>
 
-      {/* Workspaces (read-only for non-admins) */}
+      {/* Workspaces */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-semibold text-gray-900">Workspaces</h3>
@@ -406,147 +411,5 @@ export default function UserProfile() {
         ))}
       </div>
 
-      {/* Security (Change Password) */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-        <div className="flex items-center justify-between mb-2">
-          <h3 className="text-lg font-semibold text-gray-900">Security</h3>
-          <button
-            onClick={() => setShowPassword((v) => !v)}
-            className="text-blue-600 hover:text-blue-700 text-sm font-medium"
-          >
-            {showPassword ? "Hide" : "Change Password"}
-          </button>
-        </div>
-        <div className="text-sm text-gray-600 mb-4">
-          <p>Last login: {formatDate(lastLogin)}</p>
-        </div>
-
-        {showPassword && (
-          <div className="space-y-4 p-4 bg-gray-50 rounded-lg">
-            {/* Current */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Current Password</label>
-              <div className="relative">
-                <input
-                  type={pwShow.current ? "text" : "password"}
-                  value={pw.current}
-                  onChange={(e) => setPw((s) => ({ ...s, current: e.target.value }))}
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 pr-10 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-                <button
-                  type="button"
-                  onClick={() => setPwShow((s) => ({ ...s, current: !s.current }))}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                >
-                  {pwShow.current ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </button>
-              </div>
-            </div>
-
-            {/* New */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">New Password</label>
-              <div className="relative">
-                <input
-                  type={pwShow.next ? "text" : "password"}
-                  value={pw.next}
-                  onChange={(e) => setPw((s) => ({ ...s, next: e.target.value }))}
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 pr-10 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-                <button
-                  type="button"
-                  onClick={() => setPwShow((s) => ({ ...s, next: !s.next }))}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                >
-                  {pwShow.next ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </button>
-              </div>
-            </div>
-
-            {/* Confirm */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Confirm New Password</label>
-              <div className="relative">
-                <input
-                  type={pwShow.confirm ? "text" : "password"}
-                  value={pw.confirm}
-                  onChange={(e) => setPw((s) => ({ ...s, confirm: e.target.value }))}
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 pr-10 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-                <button
-                  type="button"
-                  onClick={() => setPwShow((s) => ({ ...s, confirm: !s.confirm }))}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                >
-                  {pwShow.confirm ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </button>
-              </div>
-            </div>
-
-            <div className="flex gap-2 pt-2">
-              <button
-                onClick={changePassword}
-                disabled={pwSaving}
-                className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors text-sm disabled:opacity-60"
-              >
-                {pwSaving ? "Updating…" : "Update Password"}
-              </button>
-              <button
-                onClick={() => { setShowPassword(false); setPw({ current: "", next: "", confirm: "" }); }}
-                className="bg-gray-300 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-400 transition-colors text-sm"
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Crop modal */}
-      {showCrop && selectedImage && (
-        <div className="fixed inset-0 bg-black/50 grid place-items-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-            <h3 className="text-lg font-semibold mb-4">Crop Profile Picture</h3>
-            <img ref={imgRef} src={selectedImage} alt="Selected" className="max-w-full max-h-64 mx-auto mb-4" />
-            <canvas ref={canvasRef} className="hidden" />
-            <div className="flex gap-3">
-              <button
-                onClick={async () => { onCrop(); }}
-                className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 flex items-center justify-center gap-2"
-              >
-                <Check className="w-4 h-4" />
-                Crop
-              </button>
-              <button
-                onClick={() => { setShowCrop(false); setSelectedImage(null); }}
-                className="flex-1 bg-gray-300 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-400 flex items-center justify-center gap-2"
-              >
-                <X className="w-4 h-4" />
-                Cancel
-              </button>
-            </div>
-
-            {/* Save avatar to Firebase after cropping */}
-            {croppedImage && (
-              <div className="mt-4 flex gap-2">
-                <button
-                  onClick={() => persistAvatar(croppedImage)}
-                  className="flex-1 bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 flex items-center justify-center gap-2"
-                >
-                  <Check className="w-4 h-4" />
-                  Save Photo
-                </button>
-                <button
-                  onClick={() => setCroppedImage(null)}
-                  className="flex-1 bg-gray-200 text-gray-800 px-4 py-2 rounded-md hover:bg-gray-300"
-                >
-                  Reset
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
+      {/* Security */}
+      <div className="bg-white rounded
