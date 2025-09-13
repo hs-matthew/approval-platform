@@ -382,7 +382,7 @@ const UserForm = ({
           <CheckCircle className="w-6 h-6 text-green-600" />
           <div>
             <h4 className="text-base font-semibold text-green-800">
-              {isEdit ? "User updated!" : "User created!"}
+              {isEdit ? "User updated!" : "Invite Sent!"}
             </h4>
             <p className="text-sm text-green-700">
               {isEdit ? "Changes have been saved." : "An invite record has been created for this email."}
