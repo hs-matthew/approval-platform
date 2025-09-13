@@ -238,7 +238,6 @@ function LoginPlaceholder() {
 <Route path="/users/new" element={<AddUser />} />
 <Route path="/users/:id/edit" element={<EditUser />} />
 <Route path="/profile" element={<UserProfile />} />
-<Route path="/profile" element={<ProfileEdit />} />
 
       {/* Admin */}
       <Route
