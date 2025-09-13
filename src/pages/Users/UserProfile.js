@@ -411,5 +411,146 @@ export default function UserProfile() {
         ))}
       </div>
 
-      {/* Security */}
-      <div className="bg-white rounded
+        {/* Security */}
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <div className="flex items-center justify-between mb-2">
+          <h3 className="text-lg font-semibold text-gray-900">Security</h3>
+          <button
+            onClick={() => setShowPassword((v) => !v)}
+            className="text-blue-600 hover:text-blue-700 text-sm font-medium"
+          >
+            {showPassword ? "Hide" : "Change Password"}
+          </button>
+        </div>
+        <div className="text-sm text-gray-600 mb-4">
+          <p>Last login: {formatDate(lastLogin)}</p>
+        </div>
+
+        {showPassword && (
+          <div className="space-y-4 p-4 bg-gray-50 rounded-lg">
+            {/* Current */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Current Password</label>
+              <div className="relative">
+                <input
+                  type={pwShow.current ? "text" : "password"}
+                  value={pw.current}
+                  onChange={(e) => setPw((s) => ({ ...s, current: e.target.value }))}
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 pr-10 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                <button
+                  type="button"
+                  onClick={() => setPwShow((s) => ({ ...s, current: !s.current }))}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                >
+                  {pwShow.current ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+            </div>
+
+            {/* New */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">New Password</label>
+              <div className="relative">
+                <input
+                  type={pwShow.next ? "text" : "password"}
+                  value={pw.next}
+                  onChange={(e) => setPw((s) => ({ ...s, next: e.target.value }))}
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 pr-10 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                <button
+                  type="button"
+                  onClick={() => setPwShow((s) => ({ ...s, next: !s.next }))}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                >
+                  {pwShow.next ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+            </div>
+
+            {/* Confirm */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Confirm New Password</label>
+              <div className="relative">
+                <input
+                  type={pwShow.confirm ? "text" : "password"}
+                  value={pw.confirm}
+                  onChange={(e) => setPw((s) => ({ ...s, confirm: e.target.value }))}
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 pr-10 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                <button
+                  type="button"
+                  onClick={() => setPwShow((s) => ({ ...s, confirm: !s.confirm }))}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                >
+                  {pwShow.confirm ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+            </div>
+
+            <div className="flex gap-2 pt-2">
+              <button
+                onClick={changePassword}
+                disabled={pwSaving}
+                className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors text-sm disabled:opacity-60"
+              >
+                {pwSaving ? "Updating…" : "Update Password"}
+              </button>
+              <button
+                onClick={() => { setShowPassword(false); setPw({ current: "", next: "", confirm: "" }); }}
+                className="bg-gray-300 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-400 transition-colors text-sm"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Crop modal */}
+      {showCrop && selectedImage && (
+        <div className="fixed inset-0 bg-black/50 grid place-items-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <h3 className="text-lg font-semibold mb-4">Crop Profile Picture</h3>
+            <img ref={imgRef} src={selectedImage} alt="Selected" className="max-w-full max-h-64 mx-auto mb-4" />
+            <canvas ref={canvasRef} className="hidden" />
+            <div className="flex gap-3">
+              <button
+                onClick={onCrop}
+                className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 flex items-center justify-center gap-2"
+              >
+                <Check className="w-4 h-4" />
+                Crop
+              </button>
+              <button
+                onClick={() => { setShowCrop(false); setSelectedImage(null); }}
+                className="flex-1 bg-gray-300 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-400 flex items-center justify-center gap-2"
+              >
+                <X className="w-4 h-4" />
+                Cancel
+              </button>
+            </div>
+
+            {croppedImage && (
+              <div className="mt-4 flex gap-2">
+                <button
+                  onClick={() => persistAvatar(croppedImage)}
+                  className="flex-1 bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 flex items-center justify-center gap-2"
+                >
+                  <Check className="w-4 h-4" />
+                  Save Photo
+                </button>
+                <button
+                  onClick={() => setCroppedImage(null)}
+                  className="flex-1 bg-gray-200 text-gray-800 px-4 py-2 rounded-md hover:bg-gray-300"
+                >
+                  Reset
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
