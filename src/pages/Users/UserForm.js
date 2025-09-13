@@ -1,6 +1,17 @@
 // src/pages/Users/UserForm.js
 import React, { useMemo, useState } from "react";
-import { UserPlus, Users, Shield, Edit, Mail, AlertCircle, CheckCircle, CheckSquare, Building2, Info } from "lucide-react";
+import {
+  UserPlus,
+  Users,
+  Shield,
+  Edit,
+  Mail,
+  AlertCircle,
+  CheckCircle,
+  CheckSquare,
+  Building2,
+  Info,
+} from "lucide-react";
 
 /* =========================
    Searchable Chips Multi-Select (top-level, reusable)
@@ -173,7 +184,7 @@ function WorkspaceMultiSelect({
 /* =========================
    Constants / helpers
    ========================= */
-// NOTE: Owner is intentionally NOT in this list; it’s DB-managed.
+// NOTE: Owner is intentionally NOT selectable in the UI (DB-managed only).
 const ROLES = ["admin", "staff", "client", "collaborator"];
 const PERM_KEYS = ["content", "audits", "reports"];
 const cap = (s) => s.charAt(0).toUpperCase() + s.slice(1);
@@ -214,13 +225,16 @@ const UserForm = ({
 
   // Are we editing an existing user?
   const isEdit = Boolean(initialValues && (initialValues.id || initialValues.email));
-  const isOwner = (formData.role || "").toLowerCase() === "owner";
+  const roleNow = (formData.role || "").toLowerCase();
+  const isOwner = roleNow === "owner";
+  const hideWorkspaces = isOwner || roleNow === "admin"; // 👈 Hide for Admin (and Owner view)
 
   // Keep the form in sync if parent updates initialValues
   React.useEffect(() => {
     if (initialValues) setFormData(normalize(initialValues));
   }, [initialValues]);
 
+  // quiet lints; list is passed in
   useMemo(() => workspaces, [workspaces]);
 
   const getRoleIcon = (role) => {
@@ -284,13 +298,12 @@ const UserForm = ({
       }
     }
 
-    // Role must be one of admin/staff/client/collaborator (Owner not selectable here)
-    const allowed = ["admin", "staff", "client", "collaborator", "owner"]; // include owner to allow viewing existing owners
+    // Role must be one of admin/staff/client/collaborator (Owner not selectable here, but allowed for viewing)
+    const allowed = ["admin", "staff", "client", "collaborator", "owner"];
     if (!allowed.includes((formData.role || "").toLowerCase())) e.role = "Select a valid role";
 
     // Workspace requirement:
-    // Admin may have 0; Staff/Client/Collaborator must have ≥1. Owner is DB-managed; don’t enforce here.
-    const roleNow = (formData.role || "").toLowerCase();
+    // Admin may have 0; Staff/Client/Collaborator must have ≥1. Owner is DB-managed; no enforcement here.
     const requiresWorkspace = ["staff", "client", "collaborator"].includes(roleNow);
     if (requiresWorkspace && formData.workspaceIds.length === 0) {
       e.workspaceIds = "Select at least one workspace for this role.";
@@ -317,7 +330,7 @@ const UserForm = ({
         role: isOwner ? "owner" : formData.role,
         workspaceIds: (formData.workspaceIds || []).map(String),
         collaboratorPerms:
-          (isOwner || formData.role !== "collaborator")
+          (isOwner || roleNow !== "collaborator")
             ? null
             : formData.collaboratorPerms,
         createdAt: initialValues?.createdAt ?? new Date().toISOString(),
@@ -465,24 +478,26 @@ const UserForm = ({
         </div>
 
         {/* Workspaces (searchable multi-select with chips) */}
-        <div>
-          <WorkspaceMultiSelect
-            options={workspaces}
-            value={formData.workspaceIds}
-            onChange={(ids) => handleInput("workspaceIds", ids)}
-            disabled={isSubmitting}
-            label="Assign Workspaces"
-            required={["staff", "client", "collaborator"].includes((formData.role || "").toLowerCase())}
-            error={validationErrors.workspaceIds || ""}
-            placeholder="Type to search…"
-          />
-          <p className="text-xs text-gray-500 mt-2">
-            Start typing to filter. Press Enter to add the highlighted item. Click × on a chip to remove.
-          </p>
-        </div>
+        {!hideWorkspaces && (
+          <div>
+            <WorkspaceMultiSelect
+              options={workspaces}
+              value={formData.workspaceIds}
+              onChange={(ids) => handleInput("workspaceIds", ids)}
+              disabled={isSubmitting}
+              label="Assign Workspaces"
+              required={["staff", "client", "collaborator"].includes(roleNow)}
+              error={validationErrors.workspaceIds || ""}
+              placeholder="Type to search…"
+            />
+            <p className="text-xs text-gray-500 mt-2">
+              Start typing to filter. Press Enter to add the highlighted item. Click × on a chip to remove.
+            </p>
+          </div>
+        )}
 
         {/* Collaborator permissions (checkboxes) */}
-        {formData.role === "collaborator" && (
+        {roleNow === "collaborator" && (
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
               <CheckSquare className="w-4 h-4" /> Permissions (for selected workspaces)
