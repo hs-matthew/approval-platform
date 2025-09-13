@@ -1,7 +1,7 @@
 // src/pages/Audits/AuditsList.js
 import React, { useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { CalendarDays, CheckCircle2, AlertCircle, ExternalLink, Upload, ArrowRight } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { CalendarDays, CheckCircle2, AlertCircle, Upload, ArrowRight } from "lucide-react";
 import { useAuth } from "../../hooks/useAuth";
 
 // Export for detail header reuse
