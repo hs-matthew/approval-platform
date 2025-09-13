@@ -241,6 +241,19 @@ const normalize = (vals) => {
     if (initialValues) setFormData(normalize(initialValues));
   }, [initialValues]);
 
+//log
+React.useEffect(() => {
+  if (initialValues) {
+    const n = normalize(initialValues);
+    console.log("Edit → initialValues:", initialValues);
+    console.log("Edit → initialValues.memberships:", initialValues.memberships);
+    console.log("Edit → normalize(initialValues):", n);
+  } else {
+    console.log("Edit → initialValues is null/undefined");
+  }
+}, [initialValues]);
+
+
 // If we still have no chips after initialValues load, derive workspaceIds directly from memberships
 React.useEffect(() => {
   if (!isEdit || !initialValues) return;
