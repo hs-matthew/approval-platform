@@ -225,8 +225,8 @@ function LoginPlaceholder() {
       />
 
       {/* Reports */}
-      <Route path="/seo-reports" element={<ReportsList />} />
-      <Route path="/seo-reports/:id" element={<ReportDetail />} />
+      <Route path="/reports" element={<ReportsList />} />
+      <Route path="/reports/:id" element={<ReportDetail />} />
 
       {/* Audits */}
       <Route path="/audits" element={<AuditsList />} />
