@@ -1,6 +1,4 @@
 // /api/invites/consume.js
-export const config = { runtime: "nodejs18.x" };
-
 import { db } from "../_firebaseAdmin.js";
 
 export default async function handler(req, res) {
