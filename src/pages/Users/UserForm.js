@@ -173,7 +173,7 @@ function WorkspaceMultiSelect({
 /* =========================
    Constants / helpers
    ========================= */
-const ROLES = ["owner", "staff", "collaborator"]; // global roles
+const ROLES = ["owner", "admin", "staff", "client", "collaborator"];
 const PERM_KEYS = ["content", "audits", "reports"]; // global toggle for collaborators
 const cap = (s) => s.charAt(0).toUpperCase() + s.slice(1);
 
@@ -222,22 +222,27 @@ const UserForm = ({
   // quiet lints; list is passed in
   useMemo(() => workspaces, [workspaces]);
 
-  const getRoleIcon = (role) => {
-    switch (role) {
-      case "owner": return <Shield className="w-4 h-4" />;
-      case "staff": return <Users className="w-4 h-4" />;
-      case "collaborator": return <Edit className="w-4 h-4" />;
-      default: return <Users className="w-4 h-4" />;
-    }
-  };
-  const getRoleDescription = (role) => {
-    switch (role) {
-      case "owner": return "All permissions, including account deletion.";
-      case "staff": return "Internal team access across assigned workspaces.";
-      case "collaborator": return "Granular permissions for assigned workspaces.";
-      default: return "";
-    }
-  };
+const getRoleIcon = (role) => {
+  switch (role) {
+    case "owner": return <Shield className="w-4 h-4" />;
+    case "admin": return <Shield className="w-4 h-4" />;
+    case "staff": return <Users className="w-4 h-4" />;
+    case "client": return <Users className="w-4 h-4" />;
+    case "collaborator": return <Edit className="w-4 h-4" />;
+    default: return <Users className="w-4 h-4" />;
+  }
+};
+
+const getRoleDescription = (role) => {
+  switch (role) {
+    case "owner": return "All permissions, including account deletion. Only one Owner allowed.";
+    case "admin": return "Full administrative features across the app.";
+    case "staff": return "Internal team access for assigned workspaces.";
+    case "client": return "View/approve items in assigned workspaces.";
+    case "collaborator": return "Granular permissions for assigned workspaces.";
+    default: return "";
+  }
+};
 
   const handleInput = (field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -283,12 +288,21 @@ const UserForm = ({
 
     if (!ROLES.includes(formData.role)) e.role = "Select a valid role";
 
-    // Require at least one workspace for non-owners
-    const requiresWorkspace = formData.role !== "owner";
-    if (requiresWorkspace && formData.workspaceIds.length === 0) {
-      e.workspaceIds = "Select at least one workspace";
-    }
+// Owners and Admins may have zero workspaces; Staff/Client/Collaborator must have ≥1
+const requiresWorkspace = ["staff", "client", "collaborator"].includes(formData.role);
+if (requiresWorkspace && formData.workspaceIds.length === 0) {
+  e.workspaceIds = "Select at least one workspace for this role.";
+}
 
+     // Enforce only one Owner in the system
+if (formData.role === "owner") {
+  const anotherOwnerExists = users.some(
+    (u) => (u.role || "").toLowerCase() === "owner" && u.id !== (initialValues?.id || null)
+  );
+  if (anotherOwnerExists) {
+    e.role = "There can only be one Owner. Demote the current Owner first.";
+  }
+}
     setValidationErrors(e);
     return Object.keys(e).length === 0;
   };
