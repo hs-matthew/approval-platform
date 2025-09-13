@@ -3,20 +3,24 @@ import { NavLink, useNavigate } from "react-router-dom";
 import { signOut } from "firebase/auth";
 import { auth } from "../../lib/firebase";
 import { useWorkspace } from "../../context/WorkspaceContext";
+import { Menu, X } from "lucide-react";
 
 export default function Navigation({ currentUser }) {
   const navigate = useNavigate();
-  const [open, setOpen] = useState(false);
-  const menuRef = useRef(null);
+  const [open, setOpen] = useState(false);        // avatar dropdown (desktop)
+  const [mobileOpen, setMobileOpen] = useState(false); // mobile hamburger panel
+  const menuRef = useRef(null);                   // avatar dropdown ref
+  const mobileRef = useRef(null);                 // mobile panel ref
 
-  // NOTE: using your existing API from context
   const { workspaces, activeWorkspaceId, setActiveWorkspaceId, activeWorkspace, loadingWorkspaces } = useWorkspace();
 
   const name = currentUser?.name || currentUser?.displayName || "";
   const email = currentUser?.email || "";
   const rolesNorm = Array.isArray(currentUser?.roles)
     ? currentUser.roles.map((r) => String(r).toLowerCase())
-    : currentUser?.role ? [String(currentUser.role).toLowerCase()] : [];
+    : currentUser?.role
+      ? [String(currentUser.role).toLowerCase()]
+      : [];
   const rolePrimary = rolesNorm[0] || "";
   const isAdmin = rolesNorm.includes("admin");
 
@@ -24,61 +28,96 @@ export default function Navigation({ currentUser }) {
   const initials =
     (name || email).trim().split(/\s+/).slice(0, 2).map((s) => s[0]?.toUpperCase()).join("") || "U";
 
+  // Close menus when clicking outside
   useEffect(() => {
-    const onClick = (e) => { if (menuRef.current && !menuRef.current.contains(e.target)) setOpen(false); };
+    const onClick = (e) => {
+      if (menuRef.current && !menuRef.current.contains(e.target)) setOpen(false);
+      if (mobileRef.current && !mobileRef.current.contains(e.target)) setMobileOpen(false);
+    };
+    const onKey = (e) => {
+      if (e.key === "Escape") {
+        setOpen(false);
+        setMobileOpen(false);
+      }
+    };
     document.addEventListener("mousedown", onClick);
-    return () => document.removeEventListener("mousedown", onClick);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onClick);
+      document.removeEventListener("keydown", onKey);
+    };
   }, []);
 
-  const linkBase = "px-3 py-2 rounded-md text-sm font-medium";
-  const active = "bg-blue-100 text-blue-700";
-  const inactive = "text-gray-600 hover:text-gray-900 hover:bg-gray-100";
-
-  // Guard: if somehow no active workspace is set but there are workspaces, pick the first.
+  // Guard: pick first workspace if none selected
   useEffect(() => {
     if (!loadingWorkspaces && !activeWorkspaceId && workspaces?.length > 0) {
       setActiveWorkspaceId(workspaces[0].id);
     }
   }, [loadingWorkspaces, activeWorkspaceId, workspaces, setActiveWorkspaceId]);
 
+  const linkBase = "px-3 py-2 rounded-md text-sm font-medium";
+  const active = "bg-blue-100 text-blue-700";
+  const inactive = "text-gray-600 hover:text-gray-900 hover:bg-gray-100";
+
+  const NavLinks = ({ onNavigate }) => (
+    <>
+      <NavLink to="/dashboard" onClick={onNavigate} className={({ isActive }) => `${linkBase} ${isActive ? active : inactive}`}>Dashboard</NavLink>
+      <NavLink to="/content"   onClick={onNavigate} className={({ isActive }) => `${linkBase} ${isActive ? active : inactive}`}>Content</NavLink>
+      <NavLink to="/audits"    onClick={onNavigate} className={({ isActive }) => `${linkBase} ${isActive ? active : inactive}`}>Audits</NavLink>
+      <NavLink to="/seo-reports" onClick={onNavigate} className={({ isActive }) => `${linkBase} ${isActive ? active : inactive}`}>Reports</NavLink>
+    </>
+  );
+
+  const WorkspaceSelect = (props) => (
+    <div className={props.className || ""}>
+      <label htmlFor="workspaceSelect" className="sr-only">Select Workspace</label>
+      <select
+        id="workspaceSelect"
+        value={activeWorkspaceId || ""}
+        onChange={(e) => setActiveWorkspaceId(e.target.value)}
+        disabled={loadingWorkspaces || (workspaces?.length ?? 0) === 0}
+        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-60"
+        title={activeWorkspace?.name || "Select workspace"}
+      >
+        {loadingWorkspaces && <option>Loading…</option>}
+        {!loadingWorkspaces && workspaces?.length === 0 && <option>No workspaces</option>}
+        {!loadingWorkspaces && workspaces?.map((ws) => (
+          <option key={ws.id} value={ws.id}>{ws.name || ws.id}</option>
+        ))}
+      </select>
+    </div>
+  );
+
   return (
     <header className="bg-white border-b border-gray-200 w-full">
+      {/* Top bar */}
       <div className="px-6 py-4 flex items-center justify-between">
-        {/* Left: Logo + nav */}
+        {/* Left: Logo + desktop nav */}
         <div className="flex items-center gap-6">
+          {/* Mobile: hamburger */}
+          <button
+            className="md:hidden -ml-2 p-2 rounded-md hover:bg-gray-100 focus:outline-none"
+            aria-label={mobileOpen ? "Close menu" : "Open menu"}
+            aria-expanded={mobileOpen}
+            onClick={() => setMobileOpen((o) => !o)}
+          >
+            {mobileOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+          </button>
+
           <NavLink to="/dashboard" className="flex items-center gap-3">
             <img src="/assets/hs-square-icon.png" alt="Company Logo" className="h-10 w-auto object-contain" />
             <h1 className="text-xl font-bold text-gray-900">Content Approval Platform</h1>
           </NavLink>
 
-          <nav className="flex items-center gap-2 ml-2">
-            <NavLink to="/dashboard" className={({ isActive }) => `${linkBase} ${isActive ? active : inactive}`}>Dashboard</NavLink>
-            <NavLink to="/content"   className={({ isActive }) => `${linkBase} ${isActive ? active : inactive}`}>Content</NavLink>
-            <NavLink to="/audits"    className={({ isActive }) => `${linkBase} ${isActive ? active : inactive}`}>Audits</NavLink>
-            <NavLink to="/seo-reports" className={({ isActive }) => `${linkBase} ${isActive ? active : inactive}`}>Reports</NavLink>
+          {/* Desktop nav */}
+          <nav className="hidden md:flex items-center gap-2 ml-2">
+            <NavLinks onNavigate={() => {}} />
           </nav>
         </div>
 
-        {/* Right: Workspace selector + avatar menu */}
-        <div className="flex items-center gap-4 relative" ref={menuRef}>
-          {/* Workspace dropdown (right-justified, before avatar) */}
-          <div className="min-w-[220px]">
-            <label htmlFor="workspaceSelect" className="sr-only">Select Workspace</label>
-            <select
-              id="workspaceSelect"
-              value={activeWorkspaceId || ""}
-              onChange={(e) => setActiveWorkspaceId(e.target.value)}
-              disabled={loadingWorkspaces || (workspaces?.length ?? 0) === 0}
-              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-60"
-              title={activeWorkspace?.name || "Select workspace"}
-            >
-              {loadingWorkspaces && <option>Loading…</option>}
-              {!loadingWorkspaces && workspaces?.length === 0 && <option>No workspaces</option>}
-              {!loadingWorkspaces && workspaces?.map((ws) => (
-                <option key={ws.id} value={ws.id}>{ws.name || ws.id}</option>
-              ))}
-            </select>
-          </div>
+        {/* Right: workspace selector + avatar menu (desktop) */}
+        <div className="hidden md:flex items-center gap-4 relative" ref={menuRef}>
+          <WorkspaceSelect className="min-w-[220px]" />
 
           {/* Avatar dropdown */}
           <button
@@ -130,7 +169,10 @@ export default function Navigation({ currentUser }) {
             </div>
           )}
         </div>
-      </div>
-    </header>
-  );
-}
+
+        {/* Right (mobile): avatar circle (no dropdown—actions in panel) */}
+        <div className="md:hidden">
+          {photoURL ? (
+            <img src={photoURL} alt={name || email} className="h-8 w-8 rounded-full object-cover border border-gray-200" />
+          ) : (
+            <div className
