@@ -377,29 +377,24 @@ const existing = (initialValues?.memberships && typeof initialValues.memberships
 const selectedSet = new Set(formData.workspaceIds || []);
 const nextMemberships = {};
 
-// keep or create selected ones
-for (const id of selectedSet) {
-  const prev = existing[id];
-  nextMemberships[id] =
-    prev && typeof prev === "object" ? { ...prev, assigned: prev.assigned !== false } : { assigned: true };
-}
-
+// --- Build memberships from selected workspaceIds (overwrite, simple & consistent) ---
 const nextMemberships = Object.fromEntries(
   (formData.workspaceIds || []).map((id) => [String(id), { assigned: true }])
 );
-       
+
 // --- Final payload ---
 const payload = {
   ...(initialValues || {}),                  // keep existing fields like id, createdAt, createdBy, etc.
   ...base,                                   // override with latest form values (name, email, role, workspaceIds, perms)
-  memberships: nextMemberships,              // 👈 write normalized memberships shape
+  memberships: nextMemberships,              // 👈 normalized memberships shape
   createdAt: initialValues?.createdAt ?? new Date().toISOString(),
   updatedAt: new Date().toISOString(),
   isActive: initialValues?.isActive ?? true,
   lastLogin: initialValues?.lastLogin ?? null,
   createdBy: initialValues?.createdBy ?? "system",
-  id: initialValues?.id ?? undefined,        // include id if you have one
+  id: initialValues?.id ?? undefined,
 };
+
       await onAddUser(payload); // or onUpdateUser(payload) if you split handlers
 
       if (isEdit) {
