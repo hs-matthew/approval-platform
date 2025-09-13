@@ -1,18 +1,24 @@
 import React, { useState } from 'react';
 import { UserPlus, Users, Shield, Edit, Mail, AlertCircle, CheckCircle } from 'lucide-react';
 
-const UserForm = ({ 
-  users = [], 
-  onAddUser = () => {}, 
+const UserForm = ({
+  users = [],
+  workspaces = [],
+  onAddUser = () => {},
   onCancel = null,
   className = "",
-  showTitle = true 
+  showTitle = true,
+  initialValues = null
 }) => {
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    role: 'writer'
-  });
+  const [formData, setFormData] = useState(() =>
+    initialValues ?? {
+      name: '',
+      email: '',
+      role: 'writer',
+      workspaceId: '',
+      wsRole: 'writer'
+    }
+  );
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [validationErrors, setValidationErrors] = useState({});
   const [showSuccess, setShowSuccess] = useState(false);
