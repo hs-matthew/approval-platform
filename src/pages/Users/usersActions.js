@@ -14,14 +14,13 @@ import {
 } from "firebase/firestore";
 import { db, auth } from "../../lib/firebase";
 
-// Roles: "owner" | "staff" | "collaborator"
-const DEFAULT_COLLAB_PERMS = { content: true, audits: false, reports: false };
-
 /** Normalize and validate a role value */
 function normalizeRole(role) {
   const r = String(role || "collaborator").toLowerCase();
-  return r === "owner" || r === "staff" || r === "collaborator" ? r : "collaborator";
+  return ["owner", "admin", "staff", "client", "collaborator"].includes(r) ? r : "collaborator";
 }
+
+const DEFAULT_COLLAB_PERMS = { content: true, audits: false, reports: false };
 
 /** Find an existing user doc by email (returns {id, data} or null) */
 async function findUserByEmail(email) {
