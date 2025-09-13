@@ -146,7 +146,6 @@ export default function Navigation({ currentUser }) {
               {/* Shared actions */}
               <div className="my-2 border-t border-gray-200" />
 
-              <div className="flex items-center justify-between px-4 py-2 hover:bg-gray-100">
 <button
   onClick={() => { setOpen(false); navigate("/user-profile"); }}
   className="w-full flex items-center justify-between px-4 py-2 hover:bg-gray-100"
