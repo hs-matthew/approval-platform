@@ -9,7 +9,8 @@ export default function Navigation({ currentUser }) {
   const [open, setOpen] = useState(false);
   const menuRef = useRef(null);
 
-  const { workspaces, activeWorkspaceId, setActiveWorkspaceId, activeWorkspace } = useWorkspace();
+  // NOTE: using your existing API from context
+  const { workspaces, activeWorkspaceId, setActiveWorkspaceId, activeWorkspace, loadingWorkspaces } = useWorkspace();
 
   const name = currentUser?.name || currentUser?.displayName || "";
   const email = currentUser?.email || "";
@@ -33,6 +34,13 @@ export default function Navigation({ currentUser }) {
   const active = "bg-blue-100 text-blue-700";
   const inactive = "text-gray-600 hover:text-gray-900 hover:bg-gray-100";
 
+  // Guard: if somehow no active workspace is set but there are workspaces, pick the first.
+  useEffect(() => {
+    if (!loadingWorkspaces && !activeWorkspaceId && workspaces?.length > 0) {
+      setActiveWorkspaceId(workspaces[0].id);
+    }
+  }, [loadingWorkspaces, activeWorkspaceId, workspaces, setActiveWorkspaceId]);
+
   return (
     <header className="bg-white border-b border-gray-200 w-full">
       <div className="px-6 py-4 flex items-center justify-between">
@@ -52,20 +60,22 @@ export default function Navigation({ currentUser }) {
         </div>
 
         {/* Right: Workspace selector + avatar menu */}
-        <div className="flex items-center gap-4" ref={menuRef}>
+        <div className="flex items-center gap-4 relative" ref={menuRef}>
           {/* Workspace dropdown (right-justified, before avatar) */}
           <div className="min-w-[220px]">
             <label htmlFor="workspaceSelect" className="sr-only">Select Workspace</label>
             <select
               id="workspaceSelect"
-              value={activeWorkspaceId}
+              value={activeWorkspaceId || ""}
               onChange={(e) => setActiveWorkspaceId(e.target.value)}
-              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-              title={activeWorkspace?.name || "All Workspaces"}
+              disabled={loadingWorkspaces || (workspaces?.length ?? 0) === 0}
+              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-60"
+              title={activeWorkspace?.name || "Select workspace"}
             >
-              <option value="all">All Workspaces</option>
-              {workspaces.map((ws) => (
-                <option key={ws.id} value={ws.id}>{ws.name}</option>
+              {loadingWorkspaces && <option>Loading…</option>}
+              {!loadingWorkspaces && workspaces?.length === 0 && <option>No workspaces</option>}
+              {!loadingWorkspaces && workspaces?.map((ws) => (
+                <option key={ws.id} value={ws.id}>{ws.name || ws.id}</option>
               ))}
             </select>
           </div>
@@ -88,7 +98,10 @@ export default function Navigation({ currentUser }) {
           </button>
 
           {open && (
-            <div role="menu" className="absolute right-6 top-[72px] w-60 bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden z-50">
+            <div
+              role="menu"
+              className="absolute right-0 top-[54px] w-60 bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden z-50"
+            >
               {rolePrimary && (
                 <div className="px-3 py-2 bg-gray-50 border-b border-gray-200">
                   <span className="px-2 py-0.5 rounded-full text-xs font-semibold text-purple-700 bg-purple-100">
