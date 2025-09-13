@@ -1,34 +1,35 @@
 // src/pages/Auth/AcceptInvite.js
 import React from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
-import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
+import {
+  createUserWithEmailAndPassword,
+  updateProfile,
+  fetchSignInMethodsForEmail,
+  signInWithEmailAndPassword,
+  sendPasswordResetEmail,
+} from "firebase/auth";
 import { doc, setDoc, serverTimestamp } from "firebase/firestore";
 import { auth, db } from "../../lib/firebase";
 
-/**
- * AcceptInvite flow:
- * 1) Reads ?token= from URL
- * 2) POST /api/invites/validate { token } -> expects { valid: true, invite: { id/email/role/... } }
- *    - also supports flat { valid: true, id, email, ... } shape
- * 3) Creates Firebase Auth user with email/password
- * 4) Upserts app user doc in Firestore (doc id = auth.uid)
- * 5) POST /api/invites/consume { inviteId, token } to delete/soft-delete invite
- */
+// Default collaborator perms if invite didn't specify
+const DEFAULT_COLLAB_PERMS = { content: true, audits: false, reports: false };
+
 export default function AcceptInvite() {
   const [params] = useSearchParams();
   const token = params.get("token") || "";
   const navigate = useNavigate();
 
-  // UI state
+  // UI states
   const [phase, setPhase] = React.useState("loading"); // loading | ready | working | invalid | done
   const [invite, setInvite] = React.useState(null);
   const [err, setErr] = React.useState("");
+  const [canReset, setCanReset] = React.useState(false);
 
-  // form state
+  // form
   const [name, setName] = React.useState("");
   const [password, setPassword] = React.useState("");
 
-  // Validate token and fetch invite payload
+  // ----- Validate invite (POST body) -----
   React.useEffect(() => {
     let mounted = true;
     (async () => {
@@ -37,27 +38,18 @@ export default function AcceptInvite() {
 
         const r = await fetch("/api/invites/validate", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: { "Content-Type": "application/json", Accept: "application/json" },
           body: JSON.stringify({ token }),
         });
-        const data = await r.json();
+        const data = await r.json().catch(() => ({}));
 
-        if (!r.ok || !data?.valid) {
-          if (mounted) setPhase("invalid");
-          return;
-        }
-
-        // Support both shapes: { invite: {...} } or flat {...}
-        const inv = data.invite ?? data;
-
-        // Minimal required fields
-        if (!inv?.email) {
+        if (!r.ok || !data?.valid || !data?.invite?.email) {
           if (mounted) setPhase("invalid");
           return;
         }
 
         if (mounted) {
-          setInvite(inv);
+          setInvite(data.invite);
           setPhase("ready");
         }
       } catch (e) {
@@ -75,6 +67,7 @@ export default function AcceptInvite() {
     if (phase !== "ready" || !invite) return;
 
     setErr("");
+    setCanReset(false);
     setPhase("working");
 
     try {
@@ -85,16 +78,40 @@ export default function AcceptInvite() {
         collaboratorPerms = null,
       } = invite;
 
-      // Normalize an ID to send to consume()
       const inviteId = invite.id || invite.inviteId || null;
 
-      // 1) Create Firebase Auth user (auto-signs in)
-      const cred = await createUserWithEmailAndPassword(auth, email, password);
-      if (name && cred?.user) {
-        await updateProfile(cred.user, { displayName: name });
+      // 1) Create OR sign in existing user
+      const methods = await fetchSignInMethodsForEmail(auth, email);
+
+      let cred;
+      if (!methods || methods.length === 0) {
+        // No account yet -> create with provided password
+        cred = await createUserWithEmailAndPassword(auth, email, password);
+      } else {
+        // Account exists -> attempt sign in with provided password
+        try {
+          cred = await signInWithEmailAndPassword(auth, email, password);
+        } catch (signInErr) {
+          // Wrong/unknown password → show message and reset option
+          setErr(
+            "This email already has an account. Enter your existing password to join, or send a password reset."
+          );
+          setCanReset(true);
+          setPhase("ready");
+          return;
+        }
       }
 
-      // 2) Upsert app user document with Auth UID as id
+      // 2) Set display name if supplied
+      if (name && cred?.user) {
+        try {
+          await updateProfile(cred.user, { displayName: name });
+        } catch {
+          // non-fatal
+        }
+      }
+
+      // 3) Upsert app user document with Auth UID as id (first write happens ONLY now)
       await setDoc(
         doc(db, "users", cred.user.uid),
         {
@@ -104,7 +121,7 @@ export default function AcceptInvite() {
           workspaceIds,
           collaboratorPerms:
             role === "collaborator"
-              ? collaboratorPerms || { content: true, audits: false, reports: false }
+              ? (collaboratorPerms || DEFAULT_COLLAB_PERMS)
               : null,
           isActive: true,
           createdByInvite: true,
@@ -114,21 +131,30 @@ export default function AcceptInvite() {
         { merge: true }
       );
 
-      // 3) Consume the invite (server deletes or soft-deletes it)
+      // 4) Consume invite (server marks used / soft-deletes)
       const consumeResp = await fetch("/api/invites/consume", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ inviteId, token }),
+        body: JSON.stringify(inviteId ? { inviteId, token } : { token }),
       });
-      const consumeJson = await consumeResp.json();
+      const consumeJson = await consumeResp.json().catch(() => ({}));
       if (!consumeResp.ok || consumeJson?.ok !== true) {
         throw new Error(consumeJson?.error || "Failed to consume invite");
       }
 
       setPhase("done");
-      navigate("/dashboard"); // adjust if you want a different landing page
+      navigate("/dashboard");
     } catch (e) {
       console.error(e);
+      // Safety for any leftover create-only errors
+      if (e?.code === "auth/email-already-in-use") {
+        setErr(
+          "This email already has an account. Enter your existing password to join, or send a password reset."
+        );
+        setCanReset(true);
+        setPhase("ready");
+        return;
+      }
       setErr(e?.message || "Failed to accept invite");
       setPhase("ready");
     }
@@ -156,7 +182,7 @@ export default function AcceptInvite() {
         Joining as <strong>{invite?.email}</strong>
       </p>
 
-      {err && <p className="mt-3 text-sm text-red-600">{err}</p>}
+      {err && <p className="mt-3 text-sm text-red-600">Firebase: {err}</p>}
 
       <form onSubmit={onSubmit} className="mt-6 space-y-4">
         <div>
@@ -190,6 +216,24 @@ export default function AcceptInvite() {
           {phase === "working" ? "Creating…" : "Create account"}
         </button>
       </form>
+
+      {canReset && (
+        <button
+          type="button"
+          onClick={async () => {
+            try {
+              await sendPasswordResetEmail(auth, invite.email);
+              setErr("Reset link sent. Check your email.");
+              setCanReset(false);
+            } catch (e) {
+              setErr(e?.message || "Failed to send reset email");
+            }
+          }}
+          className="mt-3 w-full rounded border border-gray-300 py-2 text-sm"
+        >
+          Send password reset
+        </button>
+      )}
 
       <p className="mt-4 text-xs text-gray-500">
         By creating an account, you agree to our terms and privacy policy.
