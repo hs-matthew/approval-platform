@@ -7,7 +7,7 @@ import Navigation from "./components/layout/Navigation";
 import Footer from "./components/layout/Footer";
 
 // Context
-import { WorkspaceProvider, useWorkspace } from "./context/WorkspaceContext";
+import { useWorkspace } from "./context/WorkspaceContext";
 
 // Hooks
 import { useAuth } from "./hooks/useAuth";
@@ -152,23 +152,29 @@ function MainRoutes(props) {
     onAddWorkspace,
   } = props;
 
+  // 🟦 Global workspace selection (single source of truth)
   const { activeWorkspaceId } = useWorkspace();
 
-  // ✅ Filter submissions by active workspace (client-side for now)
-  const filteredSubmissions =
+  // 🔎 Helper: filter lists by workspaceId (client-side)
+  const byWorkspace = (list) =>
     activeWorkspaceId === "all"
-      ? submissions
-      : submissions.filter((s) => String(s.workspaceId) === String(activeWorkspaceId));
+      ? list
+      : (list || []).filter(
+          (item) => String(item?.workspaceId) === String(activeWorkspaceId)
+        );
+
+  // ✅ Apply once here
+  const filteredSubmissions = byWorkspace(submissions);
 
   return (
     <Routes>
-      {/* Default redirect to Dashboard */}
+      {/* Default redirect */}
       <Route path="/" element={<Navigate to="/dashboard" replace />} />
 
-      {/* Dashboard (placeholder for now) */}
+      {/* Dashboard (placeholder) */}
       <Route path="/dashboard" element={<Dashboard />} />
 
-      {/* Content list (formerly Dashboard UI) */}
+      {/* Content (uses filtered submissions) */}
       <Route
         path="/content"
         element={
@@ -181,14 +187,13 @@ function MainRoutes(props) {
             setFilterType={setFilterType}
             onSelectSubmission={(s) => {
               onSelectSubmission(s);
-              // navigate handled inside the page if you want deep-links,
-              // or just use state + a modal; your choice.
+              // (optional) navigate handled inside the page if needed
             }}
           />
         }
       />
 
-      {/* Submit Content (separate page) */}
+      {/* Submit Content (we pass currentUser/workspaces; if your form sets workspaceId internally, no change needed) */}
       <Route
         path="/content/submit"
         element={
@@ -200,22 +205,24 @@ function MainRoutes(props) {
         }
       />
 
-      {/* Review a submission by ID (shareable deep link) */}
+      {/* Review (kept as-is; if you later fetch by :id internally, this stays compatible) */}
       <Route
         path="/review/:id"
         element={
           <ReviewSubmission
             submission={selectedSubmission}
-            // If you want to fetch by :id here, you can do it inside the component.
-            // For now we still pass state for compatibility.
             workspace={
               selectedSubmission
-                ? workspaces.find((w) => String(w.id) === String(selectedSubmission.workspaceId))
+                ? workspaces.find(
+                    (w) => String(w.id) === String(selectedSubmission.workspaceId)
+                  )
                 : null
             }
             author={
               selectedSubmission
-                ? users.find((u) => String(u.id) === String(selectedSubmission.authorId))
+                ? users.find(
+                    (u) => String(u.id) === String(selectedSubmission.authorId)
+                  )
                 : null
             }
             currentUser={currentUser}
@@ -227,11 +234,11 @@ function MainRoutes(props) {
         }
       />
 
-      {/* Reports */}
+      {/* Reports + Report Detail (left untouched for now; they self-source data) */}
       <Route path="/seo-reports" element={<ReportsList />} />
       <Route path="/seo-reports/:id" element={<ReportDetail />} />
 
-      {/* Audits */}
+      {/* Audits + Audit Detail (left untouched for now; they self-source data) */}
       <Route path="/audits" element={<AuditsList />} />
       <Route path="/audits/:id" element={<AuditDetail />} />
 
