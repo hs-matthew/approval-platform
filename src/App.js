@@ -139,7 +139,8 @@ export default function App() {
 
         {/* Other placeholders */}
         <Route path="/audits" element={<div className="max-w-6xl mx-auto p-6">Audits (placeholder)</div>} />
-        <Route path="/seo-reports" element={<MonthlySEOReport />} />
+        <Route path="/seo-reports" element={<ReportsList />} />
+<Route path="/seo-reports/:id" element={<MonthlySEOReport />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/content" replace />} />
