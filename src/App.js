@@ -249,7 +249,6 @@ function LoginPlaceholder() {
       />
 
       {/* Profile / Auth placeholders (replace with real pages when added) */}
-      <Route path="/profile" element={<ProfilePlaceholder currentUser={currentUser} />} />
       <Route path="/login" element={<LoginPlaceholder />} />
 
       {/* Fallback */}
