@@ -1,6 +1,6 @@
 // src/pages/Users/UserForm.js
 import React, { useMemo, useState } from "react";
-import { UserPlus, Users, Shield, Edit, Mail, AlertCircle, CheckCircle, CheckSquare, Building2 } from "lucide-react";
+import { UserPlus, Users, Shield, Edit, Mail, AlertCircle, CheckCircle, CheckSquare, Building2, Info } from "lucide-react";
 
 /* =========================
    Searchable Chips Multi-Select (top-level, reusable)
@@ -173,8 +173,9 @@ function WorkspaceMultiSelect({
 /* =========================
    Constants / helpers
    ========================= */
-const ROLES = ["owner", "admin", "staff", "client", "collaborator"];
-const PERM_KEYS = ["content", "audits", "reports"]; // global toggle for collaborators
+// NOTE: Owner is intentionally NOT in this list; it’s DB-managed.
+const ROLES = ["admin", "staff", "client", "collaborator"];
+const PERM_KEYS = ["content", "audits", "reports"];
 const cap = (s) => s.charAt(0).toUpperCase() + s.slice(1);
 
 /* =========================
@@ -197,7 +198,7 @@ const UserForm = ({
     return {
       name: vals?.name ?? "",
       email: vals?.email ?? "",
-      role: vals?.role ?? "collaborator",
+      role: vals?.role ?? "collaborator", // if "owner" comes from DB, we’ll lock the selector
       workspaceIds: ws,
       collaboratorPerms: vals?.collaboratorPerms ?? { content: true, audits: false, reports: false },
     };
@@ -213,36 +214,35 @@ const UserForm = ({
 
   // Are we editing an existing user?
   const isEdit = Boolean(initialValues && (initialValues.id || initialValues.email));
+  const isOwner = (formData.role || "").toLowerCase() === "owner";
 
   // Keep the form in sync if parent updates initialValues
   React.useEffect(() => {
     if (initialValues) setFormData(normalize(initialValues));
   }, [initialValues]);
 
-  // quiet lints; list is passed in
   useMemo(() => workspaces, [workspaces]);
 
-const getRoleIcon = (role) => {
-  switch (role) {
-    case "owner": return <Shield className="w-4 h-4" />;
-    case "admin": return <Shield className="w-4 h-4" />;
-    case "staff": return <Users className="w-4 h-4" />;
-    case "client": return <Users className="w-4 h-4" />;
-    case "collaborator": return <Edit className="w-4 h-4" />;
-    default: return <Users className="w-4 h-4" />;
-  }
-};
-
-const getRoleDescription = (role) => {
-  switch (role) {
-    case "owner": return "All permissions, including account deletion. Only one Owner allowed.";
-    case "admin": return "Full administrative features across the app.";
-    case "staff": return "Internal team access for assigned workspaces.";
-    case "client": return "View/approve items in assigned workspaces.";
-    case "collaborator": return "Granular permissions for assigned workspaces.";
-    default: return "";
-  }
-};
+  const getRoleIcon = (role) => {
+    switch (role) {
+      case "owner": return <Shield className="w-4 h-4" />;
+      case "admin": return <Shield className="w-4 h-4" />;
+      case "staff": return <Users className="w-4 h-4" />;
+      case "client": return <Users className="w-4 h-4" />;
+      case "collaborator": return <Edit className="w-4 h-4" />;
+      default: return <Users className="w-4 h-4" />;
+    }
+  };
+  const getRoleDescription = (role) => {
+    switch (role) {
+      case "owner": return "All permissions, including account deletion. Managed in the database.";
+      case "admin": return "Full administrative features across the app.";
+      case "staff": return "Internal team access for assigned workspaces.";
+      case "client": return "View/approve items in assigned workspaces.";
+      case "collaborator": return "Granular permissions for assigned workspaces.";
+      default: return "";
+    }
+  };
 
   const handleInput = (field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -273,11 +273,9 @@ const getRoleDescription = (role) => {
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       e.email = "Enter a valid email";
     } else {
-      // Only check for duplicates if creating OR if editing and email editing is enabled AND changed
       const shouldCheckDup =
         !isEdit ||
         (allowEmailEdit && email !== (initialValues?.email || "").toLowerCase());
-
       if (shouldCheckDup) {
         const duplicate = users.some(
           (u) => (u.email || "").toLowerCase() === email && u.id !== initialValues?.id
@@ -286,23 +284,18 @@ const getRoleDescription = (role) => {
       }
     }
 
-    if (!ROLES.includes(formData.role)) e.role = "Select a valid role";
+    // Role must be one of admin/staff/client/collaborator (Owner not selectable here)
+    const allowed = ["admin", "staff", "client", "collaborator", "owner"]; // include owner to allow viewing existing owners
+    if (!allowed.includes((formData.role || "").toLowerCase())) e.role = "Select a valid role";
 
-// Owners and Admins may have zero workspaces; Staff/Client/Collaborator must have ≥1
-const requiresWorkspace = ["staff", "client", "collaborator"].includes(formData.role);
-if (requiresWorkspace && formData.workspaceIds.length === 0) {
-  e.workspaceIds = "Select at least one workspace for this role.";
-}
+    // Workspace requirement:
+    // Admin may have 0; Staff/Client/Collaborator must have ≥1. Owner is DB-managed; don’t enforce here.
+    const roleNow = (formData.role || "").toLowerCase();
+    const requiresWorkspace = ["staff", "client", "collaborator"].includes(roleNow);
+    if (requiresWorkspace && formData.workspaceIds.length === 0) {
+      e.workspaceIds = "Select at least one workspace for this role.";
+    }
 
-     // Enforce only one Owner in the system
-if (formData.role === "owner") {
-  const anotherOwnerExists = users.some(
-    (u) => (u.role || "").toLowerCase() === "owner" && u.id !== (initialValues?.id || null)
-  );
-  if (anotherOwnerExists) {
-    e.role = "There can only be one Owner. Demote the current Owner first.";
-  }
-}
     setValidationErrors(e);
     return Object.keys(e).length === 0;
   };
@@ -320,10 +313,13 @@ if (formData.role === "owner") {
             ? (initialValues?.email || "")
             : formData.email
         ).trim().toLowerCase(),
-        role: formData.role,
-        workspaceIds: (formData.workspaceIds || []).map(String), // ← canonical
+        // If this user is Owner (from DB), keep role as "owner" but UI cannot change it.
+        role: isOwner ? "owner" : formData.role,
+        workspaceIds: (formData.workspaceIds || []).map(String),
         collaboratorPerms:
-          formData.role === "collaborator" ? formData.collaboratorPerms : null,
+          (isOwner || formData.role !== "collaborator")
+            ? null
+            : formData.collaboratorPerms,
         createdAt: initialValues?.createdAt ?? new Date().toISOString(),
         updatedAt: new Date().toISOString(),
         isActive: initialValues?.isActive ?? true,
@@ -332,14 +328,13 @@ if (formData.role === "owner") {
         id: initialValues?.id ?? undefined,
       };
 
-      await onAddUser(payload); // or onUpdateUser(payload) if you split handlers
+      await onAddUser(payload);
 
       if (isEdit) {
         setValidationErrors({});
         setShowSuccess(true);
         setTimeout(() => setShowSuccess(false), 2500);
       } else {
-        // Reset after create
         setFormData(normalize(null));
         setValidationErrors({});
         setShowSuccess(true);
@@ -441,12 +436,17 @@ if (formData.role === "owner") {
             onChange={(e) => handleInput("role", e.target.value)}
             className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 ${
               validationErrors.role ? "border-red-300 focus:ring-red-500" : "border-gray-300 focus:ring-blue-500"
-            }`}
-            disabled={isSubmitting}
+            } ${isOwner ? "bg-gray-50 cursor-not-allowed" : ""}`}
+            disabled={isSubmitting || isOwner}
           >
-            {ROLES.map((r) => (
-              <option key={r} value={r}>{cap(r)}</option>
-            ))}
+            {/* If role is Owner (from DB), show it but disable changing */}
+            {isOwner ? (
+              <option value="owner">Owner (DB-managed)</option>
+            ) : (
+              ROLES.map((r) => (
+                <option key={r} value={r}>{cap(r)}</option>
+              ))
+            )}
           </select>
           <div className="mt-2 p-3 bg-gray-50 rounded-md border border-gray-200">
             <div className="flex items-center gap-2 mb-1">
@@ -454,6 +454,12 @@ if (formData.role === "owner") {
               <span className="text-sm font-medium text-gray-900">{cap(formData.role)}</span>
             </div>
             <p className="text-xs text-gray-600">{getRoleDescription(formData.role)}</p>
+            {isOwner && (
+              <p className="mt-2 text-xs text-gray-500 flex items-center gap-1">
+                <Info className="w-3 h-3" />
+                Owner is assigned manually in the database and cannot be changed here.
+              </p>
+            )}
           </div>
           {validationErrors.role && <p className="mt-1 text-sm text-red-600">{validationErrors.role}</p>}
         </div>
@@ -466,7 +472,7 @@ if (formData.role === "owner") {
             onChange={(ids) => handleInput("workspaceIds", ids)}
             disabled={isSubmitting}
             label="Assign Workspaces"
-            required={formData.role !== "owner"}
+            required={["staff", "client", "collaborator"].includes((formData.role || "").toLowerCase())}
             error={validationErrors.workspaceIds || ""}
             placeholder="Type to search…"
           />
