@@ -52,13 +52,13 @@ export async function findUserByEmail(email) {
 }
 
 /* =========================
-   Add user + send invite
-   - Upserts admin-facing user record (workspaceIds canonical)
-   - Calls /api/invites/create to generate+email secure invite
+   Add user + send invite (INVITE ONLY)
+   - Does NOT create/update Firestore users/*
+   - Relies on AcceptInvite to create users/{uid} after Auth
    ========================= */
 export async function addUserWithInvite(payload) {
   const {
-    name = "",
+    name = "", // optional: can be stored on invite if you want
     email = "",
     role = "collaborator",
     workspaceIds = [],
@@ -72,56 +72,29 @@ export async function addUserWithInvite(payload) {
   const createdBy = auth.currentUser?.uid || "system";
   const safeWorkspaceIds = Array.isArray(workspaceIds) ? workspaceIds.map(String) : [];
 
-  const baseData = {
-    name: String(name).trim(),
-    email: normalizedEmail,
-    role: roleNorm,
-    isActive: true,
-    lastLogin: null,
-    workspaceIds: safeWorkspaceIds, // ✅ canonical
-    collaboratorPerms:
-      roleNorm === "collaborator" ? (collaboratorPerms || DEFAULT_COLLAB_PERMS) : null,
-    createdAt: serverTimestamp(),
-    updatedAt: serverTimestamp(),
-    createdBy,
-  };
+  // Only create + email invite via serverless API
+  const resp = await fetch(apiUrl("/api/invites/create"), {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      email: normalizedEmail,
+      role: roleNorm,
+      workspaceIds: safeWorkspaceIds,
+      collaboratorPerms:
+        roleNorm === "collaborator" ? (collaboratorPerms || DEFAULT_COLLAB_PERMS) : null,
+      // optionally pass name if you want it on the invite email
+      name: String(name).trim(),
+      createdBy,
+    }),
+  });
 
-  // Upsert by email (no deleteField usage anywhere)
-  let userId;
-  const existing = await findUserByEmail(normalizedEmail);
-  if (existing) {
-    await updateDoc(doc(db, "users", existing.id), baseData);
-    userId = existing.id;
-  } else {
-    const userRef = await addDoc(collection(db, "users"), baseData);
-    userId = userRef.id;
+  if (!resp.ok) {
+    const txt = await resp.text().catch(() => "");
+    throw new Error(`Invite creation failed (${resp.status}): ${txt}`);
   }
-
-  // Create + email invite via serverless API
-  let inviteSent = false;
-  try {
-    const resp = await fetch(apiUrl("/api/invites/create"), {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        email: normalizedEmail,
-        role: roleNorm,
-        workspaceIds: safeWorkspaceIds,
-        collaboratorPerms:
-          roleNorm === "collaborator" ? (collaboratorPerms || DEFAULT_COLLAB_PERMS) : null,
-        createdBy,
-      }),
-    });
-    inviteSent = resp.ok;
-    if (!resp.ok) {
-      const txt = await resp.text().catch(() => "");
-      console.error("[addUserWithInvite] /api/invites/create failed", resp.status, txt);
-    }
-  } catch (e) {
-    console.error("[addUserWithInvite] fetch error /api/invites/create", e);
-  }
-
-  return { userId, email: normalizedEmail, inviteSent };
+  const json = await resp.json().catch(() => ({}));
+  // Expect your API to return { ok:true, inviteId:"..." }
+  return { inviteSent: true, inviteId: json.inviteId || null, email: normalizedEmail };
 }
 
 /* =========================
