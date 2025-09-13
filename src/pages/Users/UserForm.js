@@ -267,14 +267,23 @@ const UserForm = ({
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       e.email = "Enter a valid email";
     } else {
-      // prevent duplicates, but allow same email for the user being edited
-      const duplicate = users.find(
-        (u) =>
-          (u.email || "").toLowerCase() === email &&
-          u.id !== initialValues?.id
-      );
-      if (duplicate) e.email = "A user with this email already exists";
-    }
+  // Prevent duplicates, but allow the same user in edit mode
+  const currentId = initialValues?.id ?? null;
+  const originalEmail = (initialValues?.email || "").toLowerCase();
+
+  const isSameUser = (u) =>
+    (currentId && u.id === currentId) ||
+    ((u.email || "").toLowerCase() === originalEmail);
+
+  const duplicate = users.some((u) => {
+    const uEmail = (u.email || "").toLowerCase();
+    if (uEmail !== email) return false;      // not the same email, ignore
+    if (isEdit && isSameUser(u)) return false; // same person, allow
+    return true;                              // someone else has this email
+  });
+
+  if (duplicate) e.email = "A user with this email already exists";
+}
 
     if (!ROLES.includes(formData.role)) e.role = "Select a valid role";
 
