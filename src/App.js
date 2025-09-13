@@ -22,6 +22,7 @@ import Dashboard from "./pages/Dashboard/Dashboard";
 import SubmitContent from "./pages/SubmitContent/SubmitContent";
 import ManageWorkspaces from "./pages/ManageWorkspaces/ManageWorkspaces";
 import ReviewSubmission from "./pages/ReviewSubmission/ReviewSubmission";
+import InvitesList from "./pages/Users/InvitesList";
 
 // Users
 import Users from "./pages/Users/Users";
@@ -242,6 +243,7 @@ function LoginPlaceholder() {
 <Route path="/users/new" element={<AddUser />} />
 <Route path="/users/:id/edit" element={<EditUser />} />
 <Route path="/profile" element={<UserProfile />} />
+<Route path="/invites" element={<InvitesList />} />
 
       {/* Admin */}
       <Route
