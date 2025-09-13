@@ -1,10 +1,15 @@
 // src/pages/Users/UserProfile.js
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
-  User, Camera, Mail, Phone as PhoneIcon, MapPin, Calendar, Shield, Loader2,
-  Edit3, Check, X
+  User, Camera, Mail, Phone as PhoneIcon, Calendar, Shield, Loader2,
+  Edit3, Check, X, Eye, EyeOff
 } from "lucide-react";
-import { updateProfile } from "firebase/auth";
+import {
+  updateProfile,
+  updatePassword,
+  reauthenticateWithCredential,
+  EmailAuthProvider,
+} from "firebase/auth";
 import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { auth, db, storage } from "../../lib/firebase";
@@ -163,6 +168,12 @@ export default function UserProfile() {
   const canvasRef = useRef(null);
   const fileRef = useRef(null);
 
+  // password state
+  const [showPassword, setShowPassword] = useState(false);
+  const [pw, setPw] = useState({ current: "", next: "", confirm: "" });
+  const [pwShow, setPwShow] = useState({ current: false, next: false, confirm: false });
+  const [pwSaving, setPwSaving] = useState(false);
+
   const createdAt = useMemo(() => user?.metadata?.creationTime, [user]);
   const lastLogin = useMemo(() => user?.metadata?.lastSignInTime, [user]);
 
@@ -178,7 +189,6 @@ export default function UserProfile() {
           name: user.displayName || data.name || "",
           email: user.email || data.email || "",
           phone: data.phone || "",
-          location: data.location || "",
           bio: data.bio || "",
           photoURL: data.photoURL || user.photoURL || null,
           role: data.role || "collaborator",
@@ -248,6 +258,27 @@ export default function UserProfile() {
     setFsProfile((p) => ({ ...(p || {}), bio }));
   };
 
+  /* --- Password change --- */
+  const changePassword = async () => {
+    if (!user?.email) return;
+    if (pw.next !== pw.confirm) { alert("New passwords do not match"); return; }
+    if (pw.next.length < 8) { alert("New password must be at least 8 characters long"); return; }
+    try {
+      setPwSaving(true);
+      const cred = EmailAuthProvider.credential(user.email, pw.current);
+      await reauthenticateWithCredential(user, cred);
+      await updatePassword(user, pw.next);
+      setPw({ current: "", next: "", confirm: "" });
+      setShowPassword(false);
+      alert("Password updated!");
+    } catch (e) {
+      console.error("Password change failed:", e);
+      alert("Password change failed. Check your current password and try again.");
+    } finally {
+      setPwSaving(false);
+    }
+  };
+
   return (
     <div className="max-w-4xl mx-auto p-6 space-y-6">
       {/* Header */}
@@ -303,7 +334,7 @@ export default function UserProfile() {
             </span>
           </div>
 
-          {/* Details grid */}
+          {/* Details grid (Email + Phone + Joined) */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="flex items-center gap-3">
               <Mail className="w-5 h-5 text-gray-400" />
@@ -318,11 +349,6 @@ export default function UserProfile() {
               onSave={savePhone}
               placeholder="Add a phone number"
             />
-
-            <div className="flex items-center gap-3">
-              <MapPin className="w-5 h-5 text-gray-400" />
-              <span className="text-gray-700">{fsProfile?.location || "Not provided"}</span>
-            </div>
 
             <div className="flex items-center gap-3">
               <Calendar className="w-5 h-5 text-gray-400" />
@@ -348,7 +374,7 @@ export default function UserProfile() {
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-semibold text-gray-900">Workspaces</h3>
-          {["owner", "admin"].includes((fsProfile?.role || "").toLowerCase()) ? (
+          {isAllAccess ? (
             <span className="text-sm px-3 py-1 rounded-full bg-emerald-100 text-emerald-700 border border-emerald-200">
               All workspaces
             </span>
@@ -359,7 +385,7 @@ export default function UserProfile() {
 
         {loadingWorkspaces ? (
           <p className="text-gray-600 text-sm">Loading workspaces…</p>
-        ) : ["owner", "admin"].includes((fsProfile?.role || "").toLowerCase()) ? (
+        ) : isAllAccess ? (
           <ul className="flex flex-wrap gap-2">
             {workspaces.map((ws) => (
               <li key={ws.id} className="px-3 py-1 text-sm rounded-full border bg-gray-50 text-gray-700">
@@ -378,6 +404,102 @@ export default function UserProfile() {
         ) : (
           <p className="text-gray-600 text-sm">No workspace assignments.</p>
         ))}
+      </div>
+
+      {/* Security (Change Password) */}
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <div className="flex items-center justify-between mb-2">
+          <h3 className="text-lg font-semibold text-gray-900">Security</h3>
+          <button
+            onClick={() => setShowPassword((v) => !v)}
+            className="text-blue-600 hover:text-blue-700 text-sm font-medium"
+          >
+            {showPassword ? "Hide" : "Change Password"}
+          </button>
+        </div>
+        <div className="text-sm text-gray-600 mb-4">
+          <p>Last login: {formatDate(lastLogin)}</p>
+        </div>
+
+        {showPassword && (
+          <div className="space-y-4 p-4 bg-gray-50 rounded-lg">
+            {/* Current */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Current Password</label>
+              <div className="relative">
+                <input
+                  type={pwShow.current ? "text" : "password"}
+                  value={pw.current}
+                  onChange={(e) => setPw((s) => ({ ...s, current: e.target.value }))}
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 pr-10 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                <button
+                  type="button"
+                  onClick={() => setPwShow((s) => ({ ...s, current: !s.current }))}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                >
+                  {pwShow.current ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+            </div>
+
+            {/* New */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">New Password</label>
+              <div className="relative">
+                <input
+                  type={pwShow.next ? "text" : "password"}
+                  value={pw.next}
+                  onChange={(e) => setPw((s) => ({ ...s, next: e.target.value }))}
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 pr-10 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                <button
+                  type="button"
+                  onClick={() => setPwShow((s) => ({ ...s, next: !s.next }))}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                >
+                  {pwShow.next ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+            </div>
+
+            {/* Confirm */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Confirm New Password</label>
+              <div className="relative">
+                <input
+                  type={pwShow.confirm ? "text" : "password"}
+                  value={pw.confirm}
+                  onChange={(e) => setPw((s) => ({ ...s, confirm: e.target.value }))}
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 pr-10 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                <button
+                  type="button"
+                  onClick={() => setPwShow((s) => ({ ...s, confirm: !s.confirm }))}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                >
+                  {pwShow.confirm ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+            </div>
+
+            <div className="flex gap-2 pt-2">
+              <button
+                onClick={changePassword}
+                disabled={pwSaving}
+                className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors text-sm disabled:opacity-60"
+              >
+                {pwSaving ? "Updating…" : "Update Password"}
+              </button>
+              <button
+                onClick={() => { setShowPassword(false); setPw({ current: "", next: "", confirm: "" }); }}
+                className="bg-gray-300 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-400 transition-colors text-sm"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Crop modal */}
