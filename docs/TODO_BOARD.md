@@ -5,6 +5,7 @@
 - Connect Clickup to Workspace
 - Clickup Tasks rendered in reports
 - Audits CSV Import parsing
+- Profile Photo save to Database/Show in Nav Bar
   
 ## Doing
 
