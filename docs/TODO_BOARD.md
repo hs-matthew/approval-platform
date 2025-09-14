@@ -2,6 +2,9 @@
 - Finish Workspace Filtering for Content, Reports, Audits
 - Make footer stick to bottom of window
 - mobile optimize
+- Connect Clickup to Workspace
+- Clickup Tasks rendered in reports
+- Audits CSV Import parsing
   
 ## Doing
 
