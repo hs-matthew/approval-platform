@@ -3,7 +3,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "../../lib/firebase";
-import ReviewSubmission from "../ReviewSubmission/ReviewSubmission";
+import ReviewSubmission from "../ReviewSubmission";
 import { useWorkspace } from "../../context/WorkspaceContext";
 import useCurrentUser, {
   canAdminister,
