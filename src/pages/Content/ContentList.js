@@ -1,7 +1,7 @@
 // src/pages/Content/ContentList.jsx
 import React, { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { collection, getDocs, orderBy, query, where } from "firebase/firestore";
+import { collection, getDocs, query, where } from "firebase/firestore";
 import { db } from "../../lib/firebase";
 import { useWorkspace } from "../../context/WorkspaceContext";
 import useCurrentUser, {
@@ -12,9 +12,17 @@ import useCurrentUser, {
 } from "../../hooks/useCurrentUser";
 import { FileText, ArrowRight, CheckCircle2 } from "lucide-react";
 
+function toDate(val) {
+  // Accept Firestore Timestamp, JS Date, or ISO string
+  if (!val) return new Date(0);
+  if (val?.toDate) return val.toDate();
+  if (val instanceof Date) return val;
+  return new Date(String(val));
+}
+
 export default function ContentList() {
   const navigate = useNavigate();
-  const { activeWorkspace } = useWorkspace();
+  const { activeWorkspace, workspaces, setActiveWorkspaceId } = useWorkspace();
   const { currentUser, loading } = useCurrentUser();
 
   const [rows, setRows] = useState([]);
@@ -25,25 +33,34 @@ export default function ContentList() {
     [currentUser]
   );
   const perms = useMemo(() => getGlobalCollaboratorPerms(currentUser), [currentUser]);
-  const canSubmit = perms.content; // collaborators with content perm (admins/staff already true via helper)
+  const canSubmit = perms.content;
+
+  // Auto-pick a workspace for privileged users
+  useEffect(() => {
+    if (isPrivileged && !activeWorkspace?.id && workspaces?.length > 0) {
+      setActiveWorkspaceId(workspaces[0].id);
+    }
+  }, [isPrivileged, activeWorkspace?.id, workspaces, setActiveWorkspaceId]);
 
   // Fetch pending submissions for the active workspace
   useEffect(() => {
     let mounted = true;
-
     async function run() {
       if (!activeWorkspace?.id || !currentUser) return;
       setLoadingRows(true);
       try {
+        // NOTE: no orderBy here to avoid composite index requirement.
         const qRef = query(
           collection(db, "submissions"),
           where("workspaceId", "==", activeWorkspace.id),
-          where("status", "==", "pending"),
-          orderBy("submittedAt", "desc")
+          where("status", "==", "pending")
         );
         const snap = await getDocs(qRef);
         if (!mounted) return;
+
         const items = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+        // Sort in JS by submittedAt desc (works for string or Timestamp)
+        items.sort((a, b) => toDate(b.submittedAt) - toDate(a.submittedAt));
         setRows(items);
       } catch (e) {
         console.error("Failed to load submissions:", e);
@@ -52,14 +69,12 @@ export default function ContentList() {
         if (mounted) setLoadingRows(false);
       }
     }
-
     run();
     return () => {
       mounted = false;
     };
   }, [activeWorkspace?.id, currentUser]);
 
-  // Still resolving current user
   if (loading) {
     return (
       <div className="max-w-5xl mx-auto p-6">
@@ -68,8 +83,8 @@ export default function ContentList() {
     );
   }
 
-  // No workspace chosen yet — don’t show “No access”
-  if (!activeWorkspace?.id) {
+  // For non-privileged users with nothing selected, ask to pick one
+  if (!activeWorkspace?.id && !isPrivileged) {
     return (
       <div className="max-w-5xl mx-auto p-6">
         <h2 className="text-xl font-semibold mb-2">Select a workspace</h2>
@@ -78,8 +93,8 @@ export default function ContentList() {
     );
   }
 
-  // Admin/Owner/Staff bypass membership; others must be in workspaceIds
-  const allowedForWorkspace = isPrivileged || canAccessWorkspace(currentUser, activeWorkspace.id);
+  const allowedForWorkspace =
+    activeWorkspace?.id && (isPrivileged || canAccessWorkspace(currentUser, activeWorkspace.id));
   if (!allowedForWorkspace) {
     return (
       <div className="max-w-5xl mx-auto p-6">
@@ -95,7 +110,9 @@ export default function ContentList() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h2 className="text-2xl font-bold text-gray-900">Content</h2>
-          <p className="text-gray-600">Pending items for {activeWorkspace.name}</p>
+          {activeWorkspace && (
+            <p className="text-gray-600">Pending items for {activeWorkspace.name}</p>
+          )}
         </div>
 
         {canSubmit && (
@@ -127,8 +144,8 @@ export default function ContentList() {
                 <div>
                   <div className="font-medium text-gray-900">{r.title || "(Untitled)"}</div>
                   <div className="text-sm text-gray-600">
-                    {r.type?.replace("_", " ") || "content"} ·{" "}
-                    {new Date(r.submittedAt).toLocaleString()}
+                    {(r.type || "content").replace("_", " ")} ·{" "}
+                    {toDate(r.submittedAt).toLocaleString()}
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
