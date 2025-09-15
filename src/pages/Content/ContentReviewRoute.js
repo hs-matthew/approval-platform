@@ -1,5 +1,5 @@
 // src/pages/Content/ContentReviewRoute.jsx
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "../../lib/firebase";
@@ -22,16 +22,18 @@ export default function ContentReviewRoute({
   const { id } = useParams();
   const navigate = useNavigate();
   const { activeWorkspace } = useWorkspace();
-  const { currentUser } = useCurrentUser();
+  const { currentUser, loading } = useCurrentUser();
 
   const [submission, setSubmission] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [loadingSub, setLoadingSub] = useState(true);
 
   const canModerate = useMemo(
     () => canAdminister(currentUser) || isStaff(currentUser),
     [currentUser]
   );
+  const isPrivileged = canModerate;
 
+  // Load submission by id
   useEffect(() => {
     let mounted = true;
     async function run() {
@@ -48,14 +50,16 @@ export default function ContentReviewRoute({
         console.error("Failed to load submission:", e);
         setSubmission(null);
       } finally {
-        if (mounted) setLoading(false);
+        if (mounted) setLoadingSub(false);
       }
     }
     run();
-    return () => { mounted = false; };
+    return () => {
+      mounted = false;
+    };
   }, [id]);
 
-  if (loading) {
+  if (loading || loadingSub) {
     return (
       <div className="max-w-4xl mx-auto p-6">
         <div className="text-center py-12">
@@ -66,7 +70,6 @@ export default function ContentReviewRoute({
     );
   }
 
-  // Basic guards
   if (!submission) {
     return (
       <div className="max-w-4xl mx-auto p-6">
@@ -81,10 +84,15 @@ export default function ContentReviewRoute({
     );
   }
 
-  const workspace = workspaces.find((w) => w.id === submission.workspaceId) || activeWorkspace;
+  // Workspace context fallback to the submission's workspace
+  const workspace =
+    workspaces.find((w) => String(w.id) === String(submission.workspaceId)) ||
+    activeWorkspace ||
+    null;
 
+  // Admin/Owner/Staff bypass membership; others must be in workspaceIds
   const allowedToSee =
-    !!workspace && canAccessWorkspace(currentUser, submission.workspaceId);
+    !!workspace && (isPrivileged || canAccessWorkspace(currentUser, submission.workspaceId));
 
   if (!allowedToSee) {
     return (
@@ -101,7 +109,7 @@ export default function ContentReviewRoute({
     );
   }
 
-  const author = users.find((u) => u.id === submission.authorId);
+  const author = users.find((u) => String(u.id) === String(submission.authorId)) || null;
 
   return (
     <ReviewSubmission
@@ -113,7 +121,7 @@ export default function ContentReviewRoute({
       onFeedbackChange={onFeedbackChange}
       onApprove={onApprove}
       onReject={onReject}
-      canModerate={canModerate}
+      canModerate={canModerate}   // <-- hides Approve/Reject if false
       onBack={() => navigate("/content")}
     />
   );
