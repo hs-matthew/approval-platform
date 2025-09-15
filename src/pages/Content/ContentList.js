@@ -14,27 +14,27 @@ import { FileText, ArrowRight, CheckCircle2 } from "lucide-react";
 
 export default function ContentList() {
   const navigate = useNavigate();
-  const { activeWorkspace } = useWorkspace(); // assumes your context exposes this
+  const { activeWorkspace } = useWorkspace();
   const { currentUser, loading } = useCurrentUser();
+
   const [rows, setRows] = useState([]);
   const [loadingRows, setLoadingRows] = useState(true);
 
-  const canModerate = useMemo(
+  const isPrivileged = useMemo(
     () => canAdminister(currentUser) || isStaff(currentUser),
     [currentUser]
   );
   const perms = useMemo(() => getGlobalCollaboratorPerms(currentUser), [currentUser]);
-  const canSubmit = perms.content; // collaborators with content perm (or admin/staff via helper)
+  const canSubmit = perms.content; // collaborators with content perm (admins/staff already true via helper)
 
   // Fetch pending submissions for the active workspace
   useEffect(() => {
     let mounted = true;
+
     async function run() {
       if (!activeWorkspace?.id || !currentUser) return;
       setLoadingRows(true);
-
       try {
-        // Scope by workspace + status=pending; admins/staff see all authors; others still see pending list for this workspace
         const qRef = query(
           collection(db, "submissions"),
           where("workspaceId", "==", activeWorkspace.id),
@@ -43,7 +43,6 @@ export default function ContentList() {
         );
         const snap = await getDocs(qRef);
         if (!mounted) return;
-
         const items = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
         setRows(items);
       } catch (e) {
@@ -53,10 +52,14 @@ export default function ContentList() {
         if (mounted) setLoadingRows(false);
       }
     }
+
     run();
-    return () => { mounted = false; };
+    return () => {
+      mounted = false;
+    };
   }, [activeWorkspace?.id, currentUser]);
 
+  // Still resolving current user
   if (loading) {
     return (
       <div className="max-w-5xl mx-auto p-6">
@@ -65,8 +68,19 @@ export default function ContentList() {
     );
   }
 
-  // Gate the whole section by workspace access + content permission to see the page at all
-  if (!activeWorkspace?.id || !canAccessWorkspace(currentUser, activeWorkspace.id)) {
+  // No workspace chosen yet — don’t show “No access”
+  if (!activeWorkspace?.id) {
+    return (
+      <div className="max-w-5xl mx-auto p-6">
+        <h2 className="text-xl font-semibold mb-2">Select a workspace</h2>
+        <p className="text-gray-600">Choose a workspace from the selector to view pending content.</p>
+      </div>
+    );
+  }
+
+  // Admin/Owner/Staff bypass membership; others must be in workspaceIds
+  const allowedForWorkspace = isPrivileged || canAccessWorkspace(currentUser, activeWorkspace.id);
+  if (!allowedForWorkspace) {
     return (
       <div className="max-w-5xl mx-auto p-6">
         <h2 className="text-xl font-semibold mb-2">No access</h2>
