@@ -18,24 +18,31 @@ import useCurrentUser from "./hooks/useCurrentUser";
 import { useFirestore } from "./hooks/useFirestore";
 import { useSubmissions } from "./hooks/useSubmissions";
 
-// Pages
+// Dashbaord
 import Dashboard from "./pages/Dashboard/Dashboard";
-import SubmitContent from "./pages/SubmitContent/SubmitContent";
-import ManageWorkspaces from "./pages/ManageWorkspaces/ManageWorkspaces";
-import ReviewSubmission from "./pages/ReviewSubmission/ReviewSubmission";
-import InvitesList from "./pages/Users/InvitesList";
+
+// Content
+import ContentList from "./pages/Content/ContentList";
+import SubmitContent from "./pages/Content/SubmitContent";
+import ContentReviewRoute from "./pages/Content/ContentReviewRoute";
+
+// Reports
+import ReportsList from "./pages/Reports/ReportsList";
+import ReportDetail from "./pages/Reports/ReportDetail";
+
+// Audits
+import AuditsList from "./pages/Audits/AuditsList";
+import AuditDetail from "./pages/Audits/AuditDetail";
 
 // Users
 import Users from "./pages/Users/Users";
 import AddUser from "./pages/Users/AddUser";
 import EditUser from "./pages/Users/EditUser";
 import UserProfile from "./pages/Users/UserProfile";
+import ManageWorkspaces from "./pages/ManageWorkspaces/ManageWorkspaces";
+import InvitesList from "./pages/Users/InvitesList";
 
-import ReportsList from "./pages/Reports/ReportsList";
-import ReportDetail from "./pages/Reports/ReportDetail";
 
-import AuditsList from "./pages/Audits/AuditsList";
-import AuditDetail from "./pages/Audits/AuditDetail";
 
 // ------------------------------------------------------------------
 
@@ -194,40 +201,37 @@ function LoginPlaceholder() {
 
       {/* Dashboard */}
       <Route path="/dashboard" element={<Dashboard />} />
+{/* Content */}
+{/* Content hub (pending list + CTA) */}
+<Route path="/content" element={<ContentList />} />
 
-      {/* Content */}
-      <Route path="/content" element={<ReviewSubmission />} />
+{/* Submit Content (reuses your existing component) */}
+<Route
+  path="/content/submit"
+  element={
+    <SubmitContent
+      workspaces={workspaces}
+      currentUser={currentUser}
+      onSubmit={addSubmission}
+    />
+  }
+/>
 
-      {/* Submit Content */}
-      <Route
-        path="/content/submit"
-        element={<SubmitContent workspaces={workspaces} currentUser={currentUser} onSubmit={addSubmission} />}
-      />
-
-      {/* Review */}
-      <Route
-        path="/review/:id"
-        element={
-          <ReviewSubmission
-            submission={selectedSubmission}
-            workspace={
-              selectedSubmission
-                ? workspaces.find((w) => String(w.id) === String(selectedSubmission.workspaceId))
-                : null
-            }
-            author={
-              selectedSubmission
-                ? users.find((u) => String(u.id) === String(selectedSubmission.authorId))
-                : null
-            }
-            currentUser={currentUser}
-            feedback={feedback}
-            onFeedbackChange={setFeedback}
-            onApprove={onApprove}
-            onReject={onReject}
-          />
-        }
-      />
+{/* Review a specific submission (loads by ID; handles permissions) */}
+<Route
+  path="/content/review/:id"
+  element={
+    <ContentReviewRoute
+      users={users}
+      workspaces={workspaces}
+      currentUser={currentUser}
+      onApprove={onApprove}
+      onReject={onReject}
+      feedback={feedback}
+      onFeedbackChange={setFeedback}
+    />
+  }
+/>
 {/* Auth */}
 <Route path="/accept-invite" element={<AcceptInvite />} />
 <Route path="/login" element={<Login />} />
