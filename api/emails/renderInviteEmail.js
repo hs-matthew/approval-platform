@@ -2,7 +2,7 @@ export function renderInviteEmail({ inviterName, userEmail, userRole, workspaceN
   // Capitalize role nicely
   const roleDisplay = userRole.charAt(0).toUpperCase() + userRole.slice(1);
   const { APP_HOST } = process.env;
-  const logoUrl = `${APP_HOST}/public/assets/hs-logo-animated.gif`; // assumes logo.png is in /public
+  const logoUrl = `${APP_HOST}/assets/hs-logo-animated.gif`; // path to logo
 
   return `
 <!DOCTYPE html>
