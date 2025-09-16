@@ -1,11 +1,8 @@
 // src/context/WorkspaceContext.js
 import * as React from "react";
-import {
-  collection,
-  onSnapshot,
-} from "firebase/firestore";
+import { collection, onSnapshot } from "firebase/firestore";
 import { db } from "../lib/firebase";
-import useCurrentUser, { canAdminister, isStaff } from "../hooks/useCurrentUser";
+import useCurrentUser, { canAdminister } from "../hooks/useCurrentUser";
 
 const WorkspaceContext = React.createContext(undefined);
 
@@ -16,14 +13,14 @@ export function WorkspaceProvider({ children }) {
   const [activeWorkspaceId, setActiveWorkspaceId] = React.useState(null);
   const [loadingWorkspaces, setLoadingWorkspaces] = React.useState(true);
 
-  const isPrivileged = React.useMemo(
-    () => canAdminister(currentUser) || isStaff(currentUser),
+  // New: only Owner/Admin are global
+  const isGlobalAccess = React.useMemo(
+    () => canAdminister(currentUser), // owner | admin
     [currentUser]
   );
 
-  // Subscribe to workspaces
+  // Subscribe to workspaces (fetch all; filter client-side for scoped users)
   React.useEffect(() => {
-    // Wait until we know who the user is
     if (userLoading) {
       setLoadingWorkspaces(true);
       return;
@@ -32,8 +29,6 @@ export function WorkspaceProvider({ children }) {
     let unsub = () => {};
     setLoadingWorkspaces(true);
 
-    // We’ll just subscribe to all and filter client-side for collaborators.
-    // (This avoids Firestore 'in' query chunking & composite-index headaches.)
     const ref = collection(db, "workspaces");
     unsub = onSnapshot(
       ref,
@@ -41,12 +36,14 @@ export function WorkspaceProvider({ children }) {
         const all = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
 
         let list = all;
-        if (!isPrivileged) {
-          const ids = Array.isArray(currentUser?.workspaceIds) ? currentUser.workspaceIds.map(String) : [];
+        if (!isGlobalAccess) {
+          const ids = Array.isArray(currentUser?.workspaceIds)
+            ? currentUser.workspaceIds.map(String)
+            : [];
           list = all.filter((w) => ids.includes(String(w.id)));
         }
 
-        // Keep list stable-ish by name, then id
+        // sort by name then id for stability
         list.sort((a, b) => {
           const an = (a.name || "").toLowerCase();
           const bn = (b.name || "").toLowerCase();
@@ -65,20 +62,14 @@ export function WorkspaceProvider({ children }) {
     );
 
     return () => unsub();
-  }, [userLoading, currentUser, isPrivileged]);
+  }, [userLoading, currentUser, isGlobalAccess]);
 
-  // Ensure we always have a valid activeWorkspaceId when possible
+  // Keep activeWorkspaceId valid
   React.useEffect(() => {
     if (loadingWorkspaces) return;
-
-    // If there’s no active workspace or it disappeared from the list, pick the first
     const exists = workspaces.some((w) => String(w.id) === String(activeWorkspaceId));
     if (!exists) {
-      if (workspaces.length > 0) {
-        setActiveWorkspaceId(workspaces[0].id);
-      } else {
-        setActiveWorkspaceId(null);
-      }
+      setActiveWorkspaceId(workspaces.length ? workspaces[0].id : null);
     }
   }, [loadingWorkspaces, workspaces, activeWorkspaceId]);
 
@@ -103,8 +94,6 @@ export function WorkspaceProvider({ children }) {
 
 export function useWorkspace() {
   const ctx = React.useContext(WorkspaceContext);
-  if (!ctx) {
-    throw new Error("useWorkspace must be used inside <WorkspaceProvider>");
-  }
+  if (!ctx) throw new Error("useWorkspace must be used inside <WorkspaceProvider>");
   return ctx;
 }
