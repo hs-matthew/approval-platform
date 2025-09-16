@@ -1,6 +1,8 @@
 export function renderInviteEmail({ inviterName, userEmail, userRole, workspaceName, acceptInviteUrl }) {
   // Capitalize role nicely
   const roleDisplay = userRole.charAt(0).toUpperCase() + userRole.slice(1);
+  const { APP_HOST } = process.env;
+  const logoUrl = `${APP_HOST}/public/assets/hs-logo-animated.gif`; // assumes logo.png is in /public
 
   return `
 <!DOCTYPE html>
@@ -17,7 +19,7 @@ export function renderInviteEmail({ inviterName, userEmail, userRole, workspaceN
           <!-- Header -->
           <tr>
             <td align="center" style="background:linear-gradient(135deg,#667eea,#764ba2); padding:40px 20px;">
-              <img src="https://headspacemedia.com/logo.png" alt="Headspace Media Logo" width="60" height="60" style="display:block; margin-bottom:16px; border-radius:8px;" />
+              <img src="${logoUrl}" alt="Headspace Media Logo" width="60" height="60" style="display:block; margin-bottom:16px; border-radius:8px;" />
               <h1 style="color:#ffffff; font-size:24px; margin:0;">SEO Content Platform</h1>
               <p style="color:#e2e8f0; font-size:16px; margin:8px 0 0;">Professional Content Management & SEO Services</p>
             </td>
