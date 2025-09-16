@@ -4,8 +4,8 @@ import { Timestamp } from "firebase-admin/firestore";
 import { db } from "../_firebaseAdmin.js";
 
 // Bring in the new email helpers
-import { renderInviteText } from "../../utils/renderInviteText.js";
-import { renderInviteEmail } from "../../utils/renderInviteEmail.js";
+import { renderInviteText } from "../emails/renderInviteText.js";
+import { renderInviteEmail } from "../emails/renderInviteEmail.js";
 
 const { MAILGUN_DOMAIN, MAILGUN_KEY, APP_HOST } = process.env;
 
