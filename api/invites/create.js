@@ -3,6 +3,10 @@ import crypto from "crypto";
 import { Timestamp } from "firebase-admin/firestore";
 import { db } from "../_firebaseAdmin.js";
 
+// Bring in the new email helpers
+import { renderInviteText } from "../../utils/renderInviteText.js";
+import { renderInviteEmail } from "../../utils/renderInviteEmail.js";
+
 const { MAILGUN_DOMAIN, MAILGUN_KEY, APP_HOST } = process.env;
 
 function sha256(s) {
@@ -20,9 +24,12 @@ async function sendMailgun({ to, subject, text, html }) {
 
   const res = await fetch(url, {
     method: "POST",
-    headers: { Authorization: "Basic " + Buffer.from(`api:${MAILGUN_KEY}`).toString("base64") },
+    headers: {
+      Authorization: "Basic " + Buffer.from(`api:${MAILGUN_KEY}`).toString("base64"),
+    },
     body: form,
   });
+
   if (!res.ok) {
     const body = await res.text().catch(() => "");
     throw new Error(`Mailgun error: ${res.status} ${body}`);
@@ -31,7 +38,9 @@ async function sendMailgun({ to, subject, text, html }) {
 
 export default async function handler(req, res) {
   try {
-    if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
+    if (req.method !== "POST") {
+      return res.status(405).json({ error: "Method not allowed" });
+    }
 
     const {
       email,
@@ -39,19 +48,26 @@ export default async function handler(req, res) {
       workspaceIds = [],
       collaboratorPerms = { content: true, audits: false, reports: false },
       createdBy = "system",
+      inviterName = "Headspace Media", // fallback if not provided
+      workspaceName = "Default Workspace", // fallback if not provided
       // optional: expiresInDays
     } = req.body || {};
 
     const normalizedEmail = String(email || "").trim().toLowerCase();
-    if (!normalizedEmail) return res.status(400).json({ error: "Email required" });
+    if (!normalizedEmail) {
+      return res.status(400).json({ error: "Email required" });
+    }
 
+    // Generate invite token
     const token = crypto.randomBytes(32).toString("hex");
     const tokenHash = sha256(token);
 
+    // Expiration (7 days by default)
     const expiresAt = Timestamp.fromDate(
-      new Date(Date.now() + 1000 * 60 * 60 * 24 * 7) // 7 days
+      new Date(Date.now() + 1000 * 60 * 60 * 24 * 7)
     );
 
+    // Write invite to Firestore
     await db.collection("invites").add({
       email: normalizedEmail,
       role: String(role).toLowerCase(),
@@ -64,15 +80,32 @@ export default async function handler(req, res) {
       expiresAt,
     });
 
-    const link = `${APP_HOST}/accept-invite?token=${encodeURIComponent(token)}`;
+    // Build the accept link
+    const acceptInviteUrl = `${APP_HOST}/accept-invite?token=${encodeURIComponent(token)}`;
 
+    // Prepare email content
+    const subject = "You're Invited to Join Our SEO Platform";
+    const text = renderInviteText({
+      inviterName,
+      userEmail: normalizedEmail,
+      userRole: role,
+      workspaceName,
+      acceptInviteUrl,
+    });
+    const html = renderInviteEmail({
+      inviterName,
+      userEmail: normalizedEmail,
+      userRole: role,
+      workspaceName,
+      acceptInviteUrl,
+    });
+
+    // Send the email
     await sendMailgun({
       to: normalizedEmail,
-      subject: "Your invite to Headspace Media",
-      text: `Welcome! Click to set your password: ${link}`,
-      html: `<p>Welcome! Click below to set your password and finish setup:</p>
-             <p><a href="${link}">Accept Invite</a></p>
-             <p>If you didn’t expect this, you can ignore this email.</p>`,
+      subject,
+      text,
+      html,
     });
 
     res.json({ ok: true });
