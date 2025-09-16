@@ -71,11 +71,11 @@ export function canSeeAudits(user) {
 }
 
 // Workspace access:
-// - Admin/Owner/Staff => all workspaces
-// - Others => must be listed in workspaceIds
+// - Admin/Owner => all workspaces
+// - Staff/Collaborator/Client => must be listed in workspaceIds
 export function canAccessWorkspace(user, workspaceId) {
   if (!user) return false;
-  if (canAdminister(user) || isStaff(user)) return true;
+  if (canAdminister(user)) return true; // owner | admin
   const list = Array.isArray(user.workspaceIds) ? user.workspaceIds : [];
   return list.includes(String(workspaceId));
 }
