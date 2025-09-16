@@ -99,11 +99,13 @@ function ApprovalPlatform() {
   };
 
   return (
-    // ⬇️ Correct provider usage (no props)
-    <WorkspaceProvider>
-      <div className="min-h-screen bg-gray-100">
-        <Navigation currentUser={currentUser} />
+  <WorkspaceProvider>
+    {/* Flex column wrapper makes the footer sticky */}
+    <div className="min-h-screen flex flex-col bg-gray-100">
+      <Navigation currentUser={currentUser} />
 
+      {/* Main grows to fill the remaining space */}
+      <main className="flex-1">
         {isLoading ? (
           <div className="max-w-4xl mx-auto p-6">
             <div className="text-center py-12">
@@ -133,11 +135,13 @@ function ApprovalPlatform() {
             onAddWorkspace={addWorkspace}
           />
         )}
+      </main>
 
-        <Footer />
-      </div>
-    </WorkspaceProvider>
-  );
+      {/* Footer naturally sits at bottom of viewport or content */}
+      <Footer />
+    </div>
+  </WorkspaceProvider>
+);
 }
 
 // ------------------------------------------------------------------
